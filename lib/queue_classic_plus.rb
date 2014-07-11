@@ -1,3 +1,4 @@
+require 'queue_classic'
 require "queue_classic_plus/version"
 require "queue_classic_plus/metrics"
 require "queue_classic_plus/base"
