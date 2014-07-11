@@ -16,6 +16,12 @@ Or install it yourself as:
 
     $ gem install queue_classic_plus
 
+Run the migration
+
+```ruby
+  QueueClassicPlus.migrate
+```
+
 ## Usage
 
 TODO: Write usage instructions here
