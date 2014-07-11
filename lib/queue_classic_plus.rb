@@ -16,4 +16,12 @@ module QueueClassicPlus
     conn = QC::ConnAdapter.new(c)
     conn.execute("ALTER TABLE queue_classic_jobs DROP COLUMN last_error")
   end
+
+  def self.exception_handler
+    @exception_handler ||= -> (exception, job) { nil }
+  end
+
+  def self.exception_handler=(handler)
+    @exception_handler = handler
+  end
 end

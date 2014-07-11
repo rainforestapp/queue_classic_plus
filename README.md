@@ -22,6 +22,14 @@ Run the migration
   QueueClassicPlus.migrate
 ```
 
+Setup exception handling:
+
+```ruby
+QueueClassicPlus.exception_handler = -> (exception, job) do
+  Raven.capture_exception(e, extra: {job: job, env: ENV})
+  end
+```
+
 ## Usage
 
 TODO: Write usage instructions here
