@@ -14,6 +14,10 @@ module QueueClassicPlus
       provider.increment(*args)
     end
 
+    def self.measure(*args)
+      provider.measure(*args)
+    end
+
     def self.provider
       if defined?(Librato)
         Librato

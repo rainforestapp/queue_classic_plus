@@ -1,6 +1,7 @@
 require 'queue_classic'
 require "queue_classic_plus/version"
 require "queue_classic_plus/metrics"
+require "queue_classic_plus/update_metrics"
 require "queue_classic_plus/base"
 require "queue_classic_plus/worker"
 
@@ -23,5 +24,9 @@ module QueueClassicPlus
 
   def self.exception_handler=(handler)
     @exception_handler = handler
+  end
+
+  def self.update_metrics
+    UpdateMetrics.update
   end
 end

@@ -30,13 +30,20 @@ QueueClassicPlus.exception_handler = -> (exception, job) do
   end
 ```
 
+Push metrics to your metric provider (only Librato is supported for now).
+
+```ruby
+QueueClassicPlus.update_metrics
+```
+
+Call this is a cron job or something similar.
+
 ## Usage
 
 TODO: Write usage instructions here
 
 ## TODO
 
-Remove dep on librato
 Remove dep on ActiveRecord
 Generator for rails
 
