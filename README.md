@@ -27,7 +27,7 @@ Setup exception handling:
 ```ruby
 QueueClassicPlus.exception_handler = -> (exception, job) do
   Raven.capture_exception(e, extra: {job: job, env: ENV})
-  end
+end
 ```
 
 Push metrics to your metric provider (only Librato is supported for now).
