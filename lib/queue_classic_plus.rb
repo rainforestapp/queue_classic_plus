@@ -1,4 +1,9 @@
-require 'queue_classic'
+require "queue_classic"
+require "queue_classic/later"
+require "active_record"
+require "with_advisory_lock"
+require "active_support/core_ext/class/attribute"
+
 require "queue_classic_plus/version"
 require "queue_classic_plus/metrics"
 require "queue_classic_plus/update_metrics"

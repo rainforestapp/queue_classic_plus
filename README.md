@@ -27,7 +27,7 @@ Setup exception handling:
 ```ruby
 QueueClassicPlus.exception_handler = -> (exception, job) do
   Raven.capture_exception(e, extra: {job: job, env: ENV})
-  end
+end
 ```
 
 Push metrics to your metric provider (only Librato is supported for now).
@@ -46,6 +46,7 @@ TODO: Write usage instructions here
 
 Remove dep on ActiveRecord
 Generator for rails
+Extract the rake task to start the worker
 
 ## Contributing
 
