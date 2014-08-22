@@ -9,7 +9,7 @@ module QueueClassicPlus
     def enqueue_failed(job, e)
       ActiveRecord::Base.transaction do
         FailedQueue.enqueue(job[:method], *job[:args])
-        new_job = QueueClassicAdmin::QueueClassicJob.order(:id).where(q_name: 'failed_jobs').last
+        new_job = QueueClassicJob.order(:id).where(q_name: 'failed_jobs').last
         new_job.last_error = if e.backtrace then ([e.message] + e.backtrace ).join("\n") else e.message end
         new_job.save!
       end
@@ -19,7 +19,7 @@ module QueueClassicPlus
     end
 
     def handle_failure(job, e)
-      Rails.logger.info "Handling exception #{e.message} for job #{job[:id]}"
+      QueueClassicPlus.logger.info "Handling exception #{e.message} for job #{job[:id]}"
       klass = job_klass(job)
 
       model = QueueClassicJob.find(job[:id])
