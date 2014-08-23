@@ -34,7 +34,7 @@ module QueueClassicPlus
     end
 
     def self.logger
-      Rails.logger
+      QueueClassicPlus.logger
     end
 
     def self.can_enqueue?(method, *args)
