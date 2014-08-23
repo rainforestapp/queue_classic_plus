@@ -82,8 +82,8 @@ Call this is a cron job or something similar.
 
 ## TODO
 
-Remove dep on ActiveRecord
-Generator for rails
+- Remove dep on ActiveRecord
+- Generator for rails
 
 ## Contributing
 
