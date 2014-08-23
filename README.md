@@ -32,9 +32,13 @@ Run the migration
 
 ### Create a new job
 
+```bash
+rails g my_job test_job
+```
+
 ```ruby
-# /app/jobs/test_job.rb
-class Jobs::TestJob < QueueClassicPlus::Base
+# /app/jobs/my_job.rb
+class Jobs::MyJob < QueueClassicPlus::Base
   # Specified the queue name
   @queue = :low
 
@@ -47,11 +51,11 @@ class Jobs::TestJob < QueueClassicPlus::Base
 end
 
 # In your code, you can enqueue this task like so:
-Jobs::TestJob.do(1, "foo")
+Jobs::MyJob.do(1, "foo")
 
 # You can also schedule a job in the future by doing
 
-Jobs::TestJob.enqueue_perform_in(1.hour, 1, "foo")
+Jobs::MyJob.enqueue_perform_in(1.hour, 1, "foo")
 ```
 
 ### Run the QueueClassicPlus worker
@@ -83,7 +87,6 @@ Call this is a cron job or something similar.
 ## TODO
 
 - Remove dep on ActiveRecord
-- Generator for rails
 
 ## Contributing
 

@@ -1,0 +1,8 @@
+<% module_namespacing do -%>
+class Jobs::<%= class_name %> < QueueClassicPlus::Base
+  @queue = :low
+
+  def self.perform
+  end
+end
+<% end -%>
