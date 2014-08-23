@@ -1,5 +1,5 @@
 <% module_namespacing do -%>
-describe Jobs::<%= class_name %> do
+describe Jobs::<%= class_name %>, type: :job do
   it_should_behave_like "a queueable class"
 
   describe ".perform" do
