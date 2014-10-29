@@ -45,16 +45,25 @@ module QueueClassicPlus
         ActiveRecord::Base.with_advisory_lock(lock_key, 0.1) do
           q = "SELECT COUNT(1) AS count
                FROM
-                 (SELECT 1
+               (
+                 (
+                 SELECT 1
                  FROM queue_classic_jobs
                  WHERE q_name = $1 AND method = $2 AND args::text = $3::text
                    AND (locked_at IS NULL OR locked_at > current_timestamp - interval '#{max_lock_time} seconds')
-                UNION
+                 LIMIT 1
+                 )
+                 
+                 UNION
+                 
+                 (
                  SELECT 1
                  FROM queue_classic_later_jobs
-                 WHERE q_name = $4 AND method = $5 AND args = $6
-                LIMIT 1)
-               as x"
+                 WHERE q_name = $4 AND method = $5 AND args = $6::text
+                 LIMIT 1
+                 )
+               )
+               AS x"
 
           result = QC.default_conn_adapter.execute(q, @queue, method, args.to_json, @queue, method, args.to_json)
           result['count'].to_i == 0
