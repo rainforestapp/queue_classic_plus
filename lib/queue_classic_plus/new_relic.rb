@@ -28,7 +28,7 @@ QueueClassicPlus::Base.class_eval do
 end
 
 QueueClassicPlus::CustomWorker.class_eval do
-  def initializer(*)
+  def initialize(*)
     ::NewRelic::Agent.manual_start
     super
   end
