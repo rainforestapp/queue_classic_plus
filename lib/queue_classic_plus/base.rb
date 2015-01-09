@@ -80,7 +80,7 @@ module QueueClassicPlus
     end
 
     def self.restart_in(time, remaining_retries, *args)
-      queue.enqueue_in_with_custom(time, "#{self.to_s}._perform", {'remaining_retries' => remaining_retries}, *args)
+      queue.enqueue_retry_in(time, "#{self.to_s}._perform", remaining_retries, *args)
     end
 
     def self.do(*args)

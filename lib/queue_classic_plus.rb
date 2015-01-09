@@ -9,6 +9,7 @@ require "queue_classic_plus/metrics"
 require "queue_classic_plus/update_metrics"
 require "queue_classic_plus/base"
 require "queue_classic_plus/worker"
+require "queue_classic_plus/queue_classic/queue"
 
 module QueueClassicPlus
   require 'queue_classic_plus/railtie' if defined?(Rails)
