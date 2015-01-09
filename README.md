@@ -64,7 +64,7 @@ Jobs::MyJob.enqueue_perform_in(1.hour, 1, "foo")
 QUEUE=low bundle exec qc_plus:work
 ```
 
-## Advance configuration
+## Advanced configuration
 
 If you want to log exceptions in your favorite exception tracker. You can configured it like sso:
 
