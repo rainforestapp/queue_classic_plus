@@ -101,7 +101,15 @@ require "queue_classic_plus/new_relic"
 ## Contributing
 
 1. Fork it ( https://github.com/[my-github-username]/queue_classic_plus/fork )
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create a new Pull Request
+- Create your feature branch (`git checkout -b my-new-feature`)
+- Commit your changes (`git commit -am 'Add some feature'`)
+- Push to the branch (`git push origin my-new-feature`)
+- Create a new Pull Request
+
+### Setting up the test database
+
+```
+createdb queue_classic_plus_test
+export QC_DATABASE_URL="postgres://postgres@localhost/queue_classic_plus_test"
+ruby -r queue_classic -e "QC::Setup.create"
+```
