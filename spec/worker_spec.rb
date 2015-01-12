@@ -1,9 +1,6 @@
 require 'spec_helper'
 
 describe QueueClassicPlus::CustomWorker do
-  class QueueClassicLaterJob < ActiveRecord::Base
-  end
-
   class QueueClassicJob < ActiveRecord::Base
   end
 
@@ -51,16 +48,14 @@ describe QueueClassicPlus::CustomWorker do
       QueueClassicMatchers::QueueClassicRspec.find_by_args('low', 'Jobs::Tests::LockedTestJob._perform', [true]).first['remaining_retries'].should be_nil
 
       Timecop.freeze do
-        expect do
-          worker.work
-        end.to change_queue_size_of(job_type).by(-1)
+        worker.work
 
         failed_queue.count.should == 0 # not enqueued on Failed
+        QueueClassicMatchers::QueueClassicRspec.find_by_args('low', 'Jobs::Tests::LockedTestJob._perform', [true]).first['remaining_retries'].should eq "4"
         Jobs::Tests::LockedTestJob.should have_scheduled(true).at(Time.now + described_class::BACKOFF_WIDTH.seconds.to_i) # should have scheduled a retry for later
       end
 
       Timecop.freeze(Time.now + (described_class::BACKOFF_WIDTH.seconds.to_i * 2)) do
-        QC::Later.tick(true)
         # the job should be re-enqueued with a decremented retry count
         jobs = QueueClassicMatchers::QueueClassicRspec.find_by_args('low', 'Jobs::Tests::LockedTestJob._perform', [true])
         jobs.size.should == 1
@@ -82,46 +77,11 @@ describe QueueClassicPlus::CustomWorker do
       QueueClassicMatchers::QueueClassicRspec.find_by_args('low', 'Jobs::Tests::LockedTestJob._perform', [true]).first['remaining_retries'].should be_nil
 
       Timecop.freeze do
-        expect do
-          worker.work
-        end.to change_queue_size_of(job_type).by(-1)
+        worker.work
 
+        QueueClassicMatchers::QueueClassicRspec.find_by_args('failed_jobs', 'Jobs::Tests::LockedTestJob._perform', [true]).first['remaining_retries'].should be_nil
         failed_queue.count.should == 1 # not enqueued on Failed
         Jobs::Tests::LockedTestJob.should_not have_scheduled(true).at(Time.now + described_class::BACKOFF_WIDTH.seconds.to_i) # should have scheduled a retry for later
-      end
-    end
-  end
-
-  context "enqueuing during a retry" do
-    let(:job_type) { Jobs::Tests::LockedTestJob }
-    let(:worker) { described_class.new q_name: job_type.queue.name }
-    let(:enqueue_expected_ts) { described_class::BACKOFF_WIDTH.seconds.from_now }
-
-    before do
-      job_type.max_retries = 5
-      job_type.skip_transaction!
-    end
-
-    it "does not enqueue in main queue while retrying" do
-      expect do
-        job_type.enqueue_perform(true)
-      end.to change_queue_size_of(job_type).by(1)
-
-      Jobs::Tests::LockedTestJob.should have_queue_size_of(1)
-      failed_queue.count.should == 0
-      QueueClassicMatchers::QueueClassicRspec.find_by_args('low', 'Jobs::Tests::LockedTestJob._perform', [true]).first['remaining_retries'].should be_nil
-
-      Timecop.freeze do
-        expect do
-          worker.work
-        end.to change_queue_size_of(job_type).by(-1)
-
-        failed_queue.count.should == 0 # not enqueued on Failed
-        Jobs::Tests::LockedTestJob.should have_scheduled(true).at(Time.now + described_class::BACKOFF_WIDTH.seconds.to_i) # should have scheduled a retry for later
-
-        expect do
-          job_type.enqueue_perform(true)
-        end.to change_queue_size_of(job_type).by(0)
       end
     end
   end

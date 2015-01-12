@@ -18,8 +18,7 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "queue_classic"
-  spec.add_dependency "queue_classic-later"
+  spec.add_dependency "queue_classic", "3.1.0.RC1"
   spec.add_dependency "activerecord", "> 3.0"
   spec.add_dependency "activesupport", "> 3.0"
   spec.add_dependency "with_advisory_lock"
