@@ -1,12 +1,23 @@
 module QueueClassicPlus
   module UpdateMetrics
     def self.update
-      {
-        "queued" => "=",
-        "scheduled" => "<",
-      }.each do |type, comparison_sign|
-        next unless ActiveRecord::Base.connection.table_exists?(table)
-        q = "SELECT q_name, COUNT(1) FROM queue_classic_jobs WHERE scheduled_at #{comparison_sign} NOW() GROUP BY q_name"
+      [
+        "queued",
+        "scheduled",
+      ].each do |type|
+        q = case type
+            when "queued"
+              "SELECT q_name, COUNT(1)
+              FROM queue_classic_jobs
+              WHERE scheduled_at IS NULL GROUP BY q_name"
+            when "scheduled"
+              "SELECT q_name, COUNT(1)
+              FROM queue_classic_jobs
+              WHERE scheduled_at IS NOT NULL GROUP BY q_name"
+            else
+              raise "Unknown type #{type}"
+            end
+
         results = execute(q)
 
         # Log individual queue sizes
@@ -21,7 +32,7 @@ module QueueClassicPlus
         Metrics.measure("qc.max_#{column}", age)
       end
 
-      # Log oldes unlocked jobs
+      # Log oldest unlocked jobs
       age = max_age("created_at", "locked_at IS NULL")
       Metrics.measure("qc.max_created_at.unlocked", age)
 
