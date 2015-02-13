@@ -1,6 +1,23 @@
 namespace :qc_plus do
-  desc "Start a new worker for the (default or $QUEUE) queue"
-  task :work  => :environment do
+  desc "Start a single worker"
+  task :work_one => :environment do
+    worker = QueueClassicPlus::CustomWorker.new
+    puts "Starting QC worker #{Process.pid}"
+    worker.start
+
+    trap('INT') do
+      $stderr.puts("Received INT. Shutting down.")
+      workers.each(&:stop)
+    end
+
+    trap('TERM') do
+      $stderr.puts("Received Term. Shutting down.")
+      workers.each(&:stop)
+    end
+  end
+
+  desc "Start one or many new workers for the (default or $QUEUE) queue"
+  task :work do
     parallel = false
     worker_count = Integer(ENV.fetch("QC_WORKER_COUNT", 1))
 
@@ -15,34 +32,17 @@ namespace :qc_plus do
       exit 1
     end
 
-
-    def setup_signal(worker)
-      trap('INT') do
-        $stderr.puts("Received INT. Shutting down.")
-        workers.each(&:stop)
-      end
-
-      trap('TERM') do
-        $stderr.puts("Received Term. Shutting down.")
-        workers.each(&:stop)
-      end
-    end
-
     if parallel
       begin
         Parallel.each(1..worker_count) do |worker|
-          worker = QueueClassicPlus::CustomWorker.new
-          puts "Starting QC worker #{Process.pid}"
-          setup_signal worker
-          worker.start
+          Rake::Task["environment"].execute
+          Rake::Task["qc_plus:work_one"].execute
         end
       rescue Interrupt
       end
     else
-      worker = QueueClassicPlus::CustomWorker.new
-      setup_signal worker
-      puts "Starting QC worker"
-      worker.each(&:start)
+      Rake::Task["environment"].execute
+      Rake::Task["work_one"].execute
     end
   end
 end
