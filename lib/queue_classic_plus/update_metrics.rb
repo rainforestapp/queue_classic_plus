@@ -1,56 +1,65 @@
 module QueueClassicPlus
   module UpdateMetrics
     def self.update
-      [
-        "queued",
-        "scheduled",
-      ].each do |type|
-        q = case type
-            when "queued"
-              "SELECT q_name, COUNT(1)
-              FROM queue_classic_jobs
-              WHERE scheduled_at <= NOW() GROUP BY q_name"
-            when "scheduled"
-              "SELECT q_name, COUNT(1)
-              FROM queue_classic_jobs
-              WHERE scheduled_at > NOW() GROUP BY q_name"
-            else
-              raise "Unknown type #{type}"
-            end
-
-        results = execute(q)
-
-        # Log individual queue sizes
-        results.each do |h|
-          Metrics.measure("qc.jobs_#{type}", h.fetch('count').to_i, source: h.fetch('q_name'))
+      metrics.each do |name, values|
+        if values.respond_to?(:each)
+          values.each do |(source, count)|
+            Metrics.measure("qc.#{name}", count, source: source)
+          end
+        else
+          Metrics.measure("qc.#{name}", values)
         end
       end
+    end
 
-      # Log oldest locked_at and created_at
-      ['locked_at', 'created_at'].each do |column|
-        age = max_age(column)
-        Metrics.measure("qc.max_#{column}", age)
-      end
+    def self.metrics
+      {
+        jobs_queued: jobs_queued,
+        jobs_scheduled: jobs_scheduled,
+        max_created_at: max_age("created_at"),
+        max_locked_at: max_age("locked_at"),
+        "max_created_at.unlocked" => max_age("locked_at", "locked_at IS NULL"),
+        "jobs_delayed.lag" => lag,
+        "jobs_delayed.late_count" => late_count,
+      }
+    end
 
-      # Log oldest unlocked jobs
-      age = max_age("created_at", "locked_at IS NULL")
-      Metrics.measure("qc.max_created_at.unlocked", age)
+    def self.jobs_queued
+      sql_group_count "SELECT q_name AS group, COUNT(1)
+              FROM queue_classic_jobs
+              WHERE scheduled_at <= NOW() GROUP BY q_name"
+    end
 
+    def self.jobs_scheduled
+      sql_group_count "SELECT q_name AS group, COUNT(1)
+              FROM queue_classic_jobs
+              WHERE scheduled_at > NOW() GROUP BY q_name"
+    end
+
+    def self.lag
       lag = execute("SELECT MAX(EXTRACT(EPOCH FROM now() - scheduled_at)) AS lag
               FROM queue_classic_jobs").first
-              lag = lag ? lag['lag'] : 0
+      lag ? lag['lag'].to_f : 0.0
+    end
 
-      Metrics.measure("qc.jobs_delayed.lag", lag.to_f)
-
+    def self.late_count
       nb_late = execute("SELECT COUNT(1)
          FROM queue_classic_jobs
          WHERE scheduled_at < NOW()").first
-      nb_late = nb_late ? nb_late['count'] : 0
-
-      Metrics.measure("qc.jobs_delayed.late_count", nb_late.to_i)
+      nb_late ? Integer(nb_late['count']) : 0
     end
 
     private
+
+    def self.sql_group_count(sql)
+      results = execute(sql)
+      results.map do |h|
+        {
+          h.fetch("group") => Integer(h.fetch('count'))
+        }
+      end
+    end
+
     def self.max_age(column, *conditions)
       conditions.unshift "q_name != '#{::QueueClassicPlus::CustomWorker::FailedQueue.name}'"
       conditions.unshift "scheduled_at <= NOW()"
