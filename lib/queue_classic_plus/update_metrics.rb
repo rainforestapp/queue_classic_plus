@@ -3,8 +3,10 @@ module QueueClassicPlus
     def self.update
       metrics.each do |name, values|
         if values.respond_to?(:each)
-          values.each do |(source, count)|
-            Metrics.measure("qc.#{name}", count, source: source)
+          values.each do |hash|
+            hash.to_a.each do |(source, count)|
+              Metrics.measure("qc.#{name}", count, source: source)
+            end
           end
         else
           Metrics.measure("qc.#{name}", values)

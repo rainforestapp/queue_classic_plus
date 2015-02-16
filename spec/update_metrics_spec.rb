@@ -3,7 +3,12 @@ require 'spec_helper'
 describe QueueClassicPlus::UpdateMetrics do
   describe ".update" do
     it "works" do
-      expect(QueueClassicPlus::Metrics).to(receive(:measure)).at_least(1).times
+      QC.enqueue "puts"
+
+      expect(QueueClassicPlus::Metrics).to(receive(:measure)).at_least(1).times do |metric, value, options|
+        expect(metric).to be_present
+        expect(value).to be_present
+      end
       described_class.update
     end
   end
