@@ -9,11 +9,11 @@ module QueueClassicPlus
             when "queued"
               "SELECT q_name, COUNT(1)
               FROM queue_classic_jobs
-              WHERE scheduled_at IS NULL GROUP BY q_name"
+              WHERE scheduled_at <= NOW() GROUP BY q_name"
             when "scheduled"
               "SELECT q_name, COUNT(1)
               FROM queue_classic_jobs
-              WHERE scheduled_at IS NOT NULL GROUP BY q_name"
+              WHERE scheduled_at > NOW() GROUP BY q_name"
             else
               raise "Unknown type #{type}"
             end
