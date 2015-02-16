@@ -53,6 +53,7 @@ module QueueClassicPlus
     private
     def self.max_age(column, *conditions)
       conditions.unshift "q_name != '#{::QueueClassicPlus::CustomWorker::FailedQueue.name}'"
+      conditions.unshift "scheduled_at <= NOW()"
 
       q = "SELECT EXTRACT(EPOCH FROM now() - #{column}) AS age_in_seconds
            FROM queue_classic_jobs
