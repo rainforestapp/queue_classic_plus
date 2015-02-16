@@ -71,6 +71,14 @@ describe QueueClassicPlus::UpdateMetrics do
         lag = subject["jobs_delayed.lag"]
         expect(lag).to be_within(1.0).of(60)
       end
+
+      it "ignores jobs scheduled in the future" do
+        ActiveRecord::Base.connection.execute "
+          UPDATE queue_classic_jobs SET scheduled_at = '#{1.minute.from_now}'"
+
+        lag = subject["jobs_delayed.lag"]
+        expect(lag).to eq(0)
+      end
     end
 
     context "jobs_delayed.late_count" do

@@ -38,7 +38,8 @@ module QueueClassicPlus
 
     def self.lag
       lag = execute("SELECT MAX(EXTRACT(EPOCH FROM now() - scheduled_at)) AS lag
-              FROM queue_classic_jobs").first
+              FROM queue_classic_jobs
+              WHERE scheduled_at <= NOW()").first
       lag ? lag['lag'].to_f : 0.0
     end
 
