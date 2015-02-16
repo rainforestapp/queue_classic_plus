@@ -55,6 +55,15 @@ describe QueueClassicPlus::UpdateMetrics do
         max = subject[:max_created_at]
         expect(0..0.2).to include(max)
       end
+
+      it "ignores jobs schedule in the future" do
+        ActiveRecord::Base.connection.execute "
+          UPDATE queue_classic_jobs SET created_at = '#{1.minute.ago}', scheduled_at = '#{1.minutes.from_now}'
+        "
+
+        max = subject[:max_created_at]
+        expect(0..0.2).to include(max)
+      end
     end
 
     context "max_created_at.unlocked" do
