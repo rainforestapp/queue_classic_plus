@@ -21,7 +21,7 @@ module QueueClassicPlus
         max_created_at: max_age("created_at"),
         max_locked_at: max_age("locked_at"),
         "max_created_at.unlocked" => max_age("locked_at", "locked_at IS NULL"),
-        "jobs_delayed.lag" => lag,
+        "jobs_delayed.lag" => max_age("scheduled_at"),
         "jobs_delayed.late_count" => late_count,
       }
     end
@@ -38,17 +38,10 @@ module QueueClassicPlus
               WHERE scheduled_at > NOW() GROUP BY q_name"
     end
 
-    def self.lag
-      lag = execute("SELECT MAX(EXTRACT(EPOCH FROM now() - scheduled_at)) AS lag
-              FROM queue_classic_jobs
-              WHERE scheduled_at <= NOW()").first
-      lag ? lag['lag'].to_f : 0.0
-    end
-
     def self.late_count
       nb_late = execute("SELECT COUNT(1)
          FROM queue_classic_jobs
-         WHERE scheduled_at < NOW()").first
+         WHERE scheduled_at < NOW() AND #{not_failed}").first
       nb_late ? Integer(nb_late['count']) : 0
     end
 
@@ -64,7 +57,7 @@ module QueueClassicPlus
     end
 
     def self.max_age(column, *conditions)
-      conditions.unshift "q_name != '#{::QueueClassicPlus::CustomWorker::FailedQueue.name}'"
+      conditions.unshift not_failed
       conditions.unshift "scheduled_at <= NOW()"
 
       q = "SELECT EXTRACT(EPOCH FROM now() - #{column}) AS age_in_seconds
@@ -79,6 +72,10 @@ module QueueClassicPlus
 
     def self.execute(q)
       ActiveRecord::Base.connection.execute(q)
+    end
+
+    def self.not_failed
+      "q_name != '#{::QueueClassicPlus::CustomWorker::FailedQueue.name}'"
     end
   end
 end
