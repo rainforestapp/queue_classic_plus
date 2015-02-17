@@ -86,6 +86,12 @@ QueueClassicPlus.update_metrics
 
 Call this is a cron job or something similar.
 
+If you are using NewRelic and want to push performance data to it, you can add this to an initializer:
+
+```ruby
+require "queue_classic_plus/new_relic"
+```
+
 ## TODO
 
 - Remove dep on ActiveRecord
