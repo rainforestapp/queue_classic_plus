@@ -21,7 +21,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "queue_classic", ">= 3.1.0"
   spec.add_dependency "activerecord", "> 3.0"
   spec.add_dependency "activesupport", "> 3.0"
-  spec.add_dependency "with_advisory_lock"
   spec.add_development_dependency "bundler", "~> 1.6"
   spec.add_development_dependency "rake"
 end

@@ -39,23 +39,20 @@ module QueueClassicPlus
 
     def self.can_enqueue?(method, *args)
       if locked?
-        lock_key = [@queue, method, args].to_json
         max_lock_time = ENV.fetch("QUEUE_CLASSIC_MAX_LOCK_TIME", 10 * 60).to_i
 
-        ActiveRecord::Base.with_advisory_lock(lock_key, 0.1) do
-          q = "SELECT COUNT(1) AS count
-               FROM
-                 (
-                   SELECT 1
-                   FROM queue_classic_jobs
-                   WHERE q_name = $1 AND method = $2 AND args::text = $3::text
-                     AND (locked_at IS NULL OR locked_at > current_timestamp - interval '#{max_lock_time} seconds')
-                 )
-               as x"
+        q = "SELECT COUNT(1) AS count
+             FROM
+               (
+                 SELECT 1
+                 FROM queue_classic_jobs
+                 WHERE q_name = $1 AND method = $2 AND args::text = $3::text
+                   AND (locked_at IS NULL OR locked_at > current_timestamp - interval '#{max_lock_time} seconds')
+               )
+             as x"
 
-          result = QC.default_conn_adapter.execute(q, @queue, method, args.to_json)
-          result['count'].to_i == 0
-        end
+        result = QC.default_conn_adapter.execute(q, @queue, method, args.to_json)
+        result['count'].to_i == 0
       else
         true
       end
