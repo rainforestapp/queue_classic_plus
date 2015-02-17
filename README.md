@@ -13,6 +13,10 @@ QueueClassicPlus adds many lacking features to QueueClassic.
 - Error logging / handling
 - Transactions
 
+## Compatibility
+
+This version of the matchers are compatible with queue_classic 3.1+ which includes built-in scheduling. See other branches for other compatible versions.
+
 ## Installation
 
 Add these line to your application's Gemfile:
@@ -66,7 +70,7 @@ Jobs::MyJob.enqueue_perform_in(1.hour, 1, "foo")
 QUEUE=low bundle exec qc_plus:work
 ```
 
-## Advance configuration
+## Advanced configuration
 
 If you want to log exceptions in your favorite exception tracker. You can configured it like sso:
 
@@ -86,6 +90,12 @@ QueueClassicPlus.update_metrics
 
 Call this is a cron job or something similar.
 
+If you are using NewRelic and want to push performance data to it, you can add this to an initializer:
+
+```ruby
+require "queue_classic_plus/new_relic"
+```
+
 ## TODO
 
 - Remove dep on ActiveRecord
@@ -93,7 +103,15 @@ Call this is a cron job or something similar.
 ## Contributing
 
 1. Fork it ( https://github.com/[my-github-username]/queue_classic_plus/fork )
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create a new Pull Request
+- Create your feature branch (`git checkout -b my-new-feature`)
+- Commit your changes (`git commit -am 'Add some feature'`)
+- Push to the branch (`git push origin my-new-feature`)
+- Create a new Pull Request
+
+### Setting up the test database
+
+```
+createdb queue_classic_plus_test
+export QC_DATABASE_URL="postgres://postgres@localhost/queue_classic_plus_test"
+ruby -r queue_classic -e "QC::Setup.create"
+```

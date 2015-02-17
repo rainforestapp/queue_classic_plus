@@ -1,51 +1,70 @@
 module QueueClassicPlus
   module UpdateMetrics
     def self.update
-      {
-        "queued" => "queue_classic_jobs",
-        "scheduled" => "queue_classic_later_jobs",
-      }.each do |type, table|
-        next unless ActiveRecord::Base.connection.table_exists?(table)
-        q = "SELECT q_name, COUNT(1) FROM #{table} GROUP BY q_name"
-        results = execute(q)
-
-        # Log individual queue sizes
-        results.each do |h|
-          Metrics.measure("qc.jobs_#{type}", h.fetch('count').to_i, source: h.fetch('q_name'))
+      metrics.each do |name, values|
+        if values.respond_to?(:each)
+          values.each do |hash|
+            hash.to_a.each do |(source, count)|
+              Metrics.measure("qc.#{name}", count, source: source)
+            end
+          end
+        else
+          Metrics.measure("qc.#{name}", values)
         end
-      end
-
-      # Log oldest locked_at and created_at
-      ['locked_at', 'created_at'].each do |column|
-        age = max_age(column)
-        Metrics.measure("qc.max_#{column}", age)
-      end
-
-      # Log oldes unlocked jobs
-      age = max_age("created_at", "locked_at IS NULL")
-      Metrics.measure("qc.max_created_at.unlocked", age)
-
-      if ActiveRecord::Base.connection.table_exists?('queue_classic_later_jobs')
-        lag = execute("SELECT MAX(EXTRACT(EPOCH FROM now() - not_before)) AS lag 
-                FROM queue_classic_later_jobs").first
-                lag = lag ? lag['lag'] : 0
-
-        Metrics.measure("qc.jobs_delayed.lag", lag.to_f)
-
-        nb_late = execute("SELECT COUNT(1) 
-           FROM queue_classic_later_jobs 
-           WHERE not_before < NOW()").first
-        nb_late = nb_late ? nb_late['count'] : 0
-
-        Metrics.measure("qc.jobs_delayed.late_count", nb_late.to_i)
       end
     end
 
-    private
-    def self.max_age(column, *conditions)
-      conditions.unshift "q_name != '#{::QueueClassicPlus::CustomWorker::FailedQueue.name}'"
+    def self.metrics
+      {
+        jobs_queued: jobs_queued,
+        jobs_scheduled: jobs_scheduled,
+        max_created_at: max_age("created_at"),
+        max_locked_at: max_age("locked_at", "locked_at IS NOT NULL"),
+        "max_created_at.unlocked" => max_age("locked_at", "locked_at IS NULL"),
+        "jobs_delayed.lag" => max_age("scheduled_at"),
+        "jobs_delayed.late_count" => late_count,
+      }
+    end
 
-      q = "SELECT EXTRACT(EPOCH FROM now() - #{column}) AS age_in_seconds 
+    def self.jobs_queued
+      sql_group_count "SELECT q_name AS group, COUNT(1)
+              FROM queue_classic_jobs
+              WHERE scheduled_at <= NOW() GROUP BY q_name"
+    end
+
+    def self.jobs_scheduled
+      sql_group_count "SELECT q_name AS group, COUNT(1)
+              FROM queue_classic_jobs
+              WHERE scheduled_at > NOW() GROUP BY q_name"
+    end
+
+    def self.late_count
+      nb_late = execute("SELECT COUNT(1)
+         FROM queue_classic_jobs
+         WHERE scheduled_at < NOW() AND #{not_failed}").first
+      nb_late ? Integer(nb_late['count']) : 0
+    end
+
+    private
+
+    def self.sql_group_count(sql)
+      results = execute(sql)
+      results.map do |h|
+        {
+          h.fetch("group") => Integer(h.fetch('count'))
+        }
+      end
+    end
+
+    def self.max_age(column, *conditions)
+      conditions.unshift not_failed
+      conditions.unshift "scheduled_at <= NOW()"
+
+      # This is to support `jobs_delayed.lag`. Basically, comparing the same column
+      # with itself to know max_age isn't helpful.
+      reference_time = column.to_s == 'created_at' ? 'scheduled_at' : 'now()'
+
+      q = "SELECT EXTRACT(EPOCH FROM #{reference_time} - #{column}) AS age_in_seconds
            FROM queue_classic_jobs
            WHERE #{conditions.join(" AND ")}
            ORDER BY age_in_seconds DESC
@@ -57,6 +76,10 @@ module QueueClassicPlus
 
     def self.execute(q)
       ActiveRecord::Base.connection.execute(q)
+    end
+
+    def self.not_failed
+      "q_name != '#{::QueueClassicPlus::CustomWorker::FailedQueue.name}'"
     end
   end
 end

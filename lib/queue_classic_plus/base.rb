@@ -45,27 +45,15 @@ module QueueClassicPlus
         ActiveRecord::Base.with_advisory_lock(lock_key, 0.1) do
           q = "SELECT COUNT(1) AS count
                FROM
-               (
                  (
-                 SELECT 1
-                 FROM queue_classic_jobs
-                 WHERE q_name = $1 AND method = $2 AND args::text = $3::text
-                   AND (locked_at IS NULL OR locked_at > current_timestamp - interval '#{max_lock_time} seconds')
-                 LIMIT 1
+                   SELECT 1
+                   FROM queue_classic_jobs
+                   WHERE q_name = $1 AND method = $2 AND args::text = $3::text
+                     AND (locked_at IS NULL OR locked_at > current_timestamp - interval '#{max_lock_time} seconds')
                  )
-                 
-                 UNION
-                 
-                 (
-                 SELECT 1
-                 FROM queue_classic_later_jobs
-                 WHERE q_name = $4 AND method = $5 AND args = $6::text
-                 LIMIT 1
-                 )
-               )
-               AS x"
+               as x"
 
-          result = QC.default_conn_adapter.execute(q, @queue, method, args.to_json, @queue, method, args.to_json)
+          result = QC.default_conn_adapter.execute(q, @queue, method, args.to_json)
           result['count'].to_i == 0
         end
       else
@@ -89,7 +77,7 @@ module QueueClassicPlus
     end
 
     def self.restart_in(time, remaining_retries, *args)
-      queue.enqueue_in_with_custom(time, "#{self.to_s}._perform", {'remaining_retries' => remaining_retries}, *args)
+      queue.enqueue_retry_in(time, "#{self.to_s}._perform", remaining_retries, *args)
     end
 
     def self.do(*args)

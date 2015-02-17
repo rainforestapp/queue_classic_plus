@@ -17,7 +17,6 @@ RSpec.configure do |config|
 
     QC.default_conn_adapter = QC::ConnAdapter.new(ActiveRecord::Base.connection.raw_connection)
     QC::Setup.create
-    QC::Later::Setup.create
     QueueClassicPlus.migrate
   end
 
