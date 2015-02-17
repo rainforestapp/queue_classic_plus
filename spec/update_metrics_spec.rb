@@ -51,6 +51,17 @@ describe QueueClassicPlus::UpdateMetrics do
         max = subject[:max_locked_at]
         expect(59..61).to include(max)
       end
+
+      context 'scheduled jobs' do
+        it 'reports the correct max_locked_at' do
+          qc_job = QueueClassicJob.last
+          qc_job.update(created_at: 5.minutes.ago,
+                        scheduled_at: 1.minutes.ago,
+                        locked_at: 30.seconds.ago)
+
+          expect(subject[:max_locked_at]).to eq 30
+        end
+      end
     end
 
     context "max_created_at" do
