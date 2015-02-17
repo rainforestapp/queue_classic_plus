@@ -1,6 +1,6 @@
 language: ruby
 before_script:
-  - psql -c 'createdb queue_classic_plus_test;' -U postgres
+  - psql -c 'create database queue_classic_plus_test;' -U postgres
   - ruby -r queue_classic -e "QC::Setup.create"
 
 rvm:
