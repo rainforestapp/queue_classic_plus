@@ -12,6 +12,7 @@ QueueClassicPlus adds many lacking features to QueueClassic.
 - Metrics
 - Error logging / handling
 - Transactions
+- Rails generator to create new jobs
 
 ## Compatibility
 
@@ -22,7 +23,6 @@ This version of the matchers are compatible with queue_classic 3.1+ which includ
 Add these line to your application's Gemfile:
 
     gem 'queue_classic_plus'
-    gem "queue_classic-later", github: "dpiddy/queue_classic-later"
 
 And then execute:
 
@@ -39,7 +39,7 @@ Run the migration
 ### Create a new job
 
 ```bash
-rails g my_job test_job
+rails g qc_plus_job test_job
 ```
 
 ```ruby
@@ -60,15 +60,65 @@ end
 Jobs::MyJob.do(1, "foo")
 
 # You can also schedule a job in the future by doing
-
 Jobs::MyJob.enqueue_perform_in(1.hour, 1, "foo")
 ```
 
 ### Run the QueueClassicPlus worker
 
+QueueClassicPlus ships with its own worker and a rake task to run it. You need to use this worker to take advance of many features of QueueClassicPlus.
+
 ```
 QUEUE=low bundle exec qc_plus:work
 ```
+
+### Other jobs options
+
+#### Singleton Job
+
+It's common for background jobs to never need to be enqueed multiple time. QueueClassicPlus support these type of single jobs. Here's an example one:
+
+```ruby
+class Jobs::UpdateMetrics < QueueClassicPlus::Base
+  @queue = :low
+
+  # Use the lock! keyword to prevent the job from being enqueud once.
+  lock!
+
+  def self.perform(metric_type)
+    # ...
+  end
+end
+
+```
+
+Note that `lock!` only prevents the same job from beeing enqued multiple times if the argument match.
+
+So in our example:
+
+```ruby
+Jobs::UpdateMetrics.do 'type_a' # enqueues job
+Jobs::UpdateMetrics.do 'type_a' # does not enqueues job since it's already queued
+Jobs::UpdateMetrics.do 'type_b' # enqueues job as the arguments are different.
+```
+
+```ruby
+class Jobs::NoTransaction < QueueClassicPlus::Base
+  # Don't run the perform method in a transaction
+  skip_transaction!
+
+  @queue = :low
+
+  def self.perform(user_id)
+    # ...
+  end
+end
+```
+
+#### Transaction
+
+By default, all QueueClassicPlus jobs are executed in a PostgreSQL transaction. This decision was made because most jobs are usually pretty small and it's preferable to have all the benefits of the transaction.
+
+You can disable this feature on a per job basis in the follwing way:
 
 ## Advanced configuration
 
@@ -96,10 +146,6 @@ If you are using NewRelic and want to push performance data to it, you can add t
 require "queue_classic_plus/new_relic"
 ```
 
-## TODO
-
-- Remove dep on ActiveRecord
-
 ## Contributing
 
 1. Fork it ( https://github.com/[my-github-username]/queue_classic_plus/fork )
@@ -112,6 +158,4 @@ require "queue_classic_plus/new_relic"
 
 ```
 createdb queue_classic_plus_test
-export QC_DATABASE_URL="postgres://postgres@localhost/queue_classic_plus_test"
-ruby -r queue_classic -e "QC::Setup.create"
 ```
