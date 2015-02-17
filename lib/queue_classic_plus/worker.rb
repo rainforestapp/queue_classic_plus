@@ -1,18 +1,12 @@
 module QueueClassicPlus
   class CustomWorker < QC::Worker
-    class QueueClassicJob < ActiveRecord::Base
-    end
-
     BACKOFF_WIDTH = 10
     FailedQueue = QC::Queue.new("failed_jobs")
 
     def enqueue_failed(job, e)
-      ActiveRecord::Base.transaction do
-        FailedQueue.enqueue(job[:method], *job[:args])
-        new_job = QueueClassicJob.order(:id).where(q_name: 'failed_jobs').last
-        new_job.last_error = if e.backtrace then ([e.message] + e.backtrace ).join("\n") else e.message end
-        new_job.save!
-      end
+      sql = "INSERT INTO #{QC::TABLE_NAME} (q_name, method, args, last_error) VALUES ('failed_jobs', $1, $2, $3)"
+      last_error = e.backtrace ? ([e.message] + e.backtrace ).join("\n") : e.message
+      QC.default_conn_adapter.execute sql, job[:method], JSON.dump(job[:args]), last_error
 
       QueueClassicPlus.exception_handler.call(e, job)
       Metrics.increment("qc.errors", source: @q_name)
@@ -22,11 +16,9 @@ module QueueClassicPlus
       QueueClassicPlus.logger.info "Handling exception #{e.message} for job #{job[:id]}"
       klass = job_klass(job)
 
-      model = QueueClassicJob.find(job[:id])
-
       # The mailers doesn't have a retries_on?
       if klass && klass.respond_to?(:retries_on?) && klass.retries_on?(e)
-        remaining_retries = model.remaining_retries || klass.max_retries
+        remaining_retries = job[:remaining_retries] || klass.max_retries
         remaining_retries -= 1
 
         if remaining_retries > 0
@@ -39,7 +31,8 @@ module QueueClassicPlus
       else
         enqueue_failed(job, e)
       end
-      model.destroy
+
+      FailedQueue.delete(job[:id])
     end
 
     private
