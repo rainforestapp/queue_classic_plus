@@ -69,9 +69,11 @@ describe QueueClassicPlus::UpdateMetrics do
           expect(0..0.2).to include(max)
         end
 
-        it 'reports time that the job has been ready once the scheduled_at is due' do
-          QueueClassicJob.last.update(created_at: 5.minutes.ago, scheduled_at: 1.minutes.ago)
-          expect(subject[:max_created_at]).to eq 240
+        context 'after scheduled_at is passed' do
+          it 'reports time that the job has been ready' do
+            QueueClassicJob.last.update(created_at: 5.minutes.ago, scheduled_at: 1.minutes.ago)
+            expect(subject[:max_created_at]).to eq 240
+          end
         end
       end
     end
