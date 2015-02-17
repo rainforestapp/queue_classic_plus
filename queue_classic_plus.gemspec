@@ -6,9 +6,9 @@ require 'queue_classic_plus/version'
 Gem::Specification.new do |spec|
   spec.name          = "queue_classic_plus"
   spec.version       = QueueClassicPlus::VERSION
-  spec.authors       = ["Simon Mathieu"]
-  spec.email         = ["simon.math@gmail.com"]
-  spec.summary       = %q{Useful xxtra stuff for queue classic}
+  spec.authors       = ["Simon Mathieu", "Russell Smith", "Jean-Philippe Boily"]
+  spec.email         = ["simon.math@gmail.com", "russ@rainforestqa.com", "j@jipi.ca"]
+  spec.summary       = %q{Useful extras for Queue Classic}
   spec.description   = %q{}
   spec.homepage      = ""
   spec.license       = "MIT"

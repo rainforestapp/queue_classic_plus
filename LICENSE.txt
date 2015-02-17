@@ -1,4 +1,4 @@
-Copyright (c) 2014 Simon Mathieu
+Copyright (c) 2014 CLDRDR Inc.
 
 MIT License
 
