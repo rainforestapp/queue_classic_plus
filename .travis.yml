@@ -2,6 +2,7 @@ language: ruby
 before_script:
   - psql -c 'create database queue_classic_plus_test;' -U postgres
   - ruby -r queue_classic -e "QC::Setup.create"
+  - export QC_DATABASE_URL="postgres://postgres@localhost/queue_classic_plus_test"
 
 rvm:
   - 2.0.0
