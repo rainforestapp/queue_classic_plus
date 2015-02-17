@@ -1,6 +1,9 @@
 require 'spec_helper'
 
 describe QueueClassicPlus::UpdateMetrics do
+  class QueueClassicJob < ActiveRecord::Base
+  end
+
   describe ".update" do
     it "works" do
       QC.enqueue "puts"
@@ -56,13 +59,20 @@ describe QueueClassicPlus::UpdateMetrics do
         expect(0..0.2).to include(max)
       end
 
-      it "ignores jobs schedule in the future" do
-        ActiveRecord::Base.connection.execute "
-          UPDATE queue_classic_jobs SET created_at = '#{1.minute.ago}', scheduled_at = '#{1.minutes.from_now}'
-        "
+      context 'scheduled jobs' do
+        it "ignores jobs schedule in the future" do
+          ActiveRecord::Base.connection.execute "
+            UPDATE queue_classic_jobs SET created_at = '#{1.minute.ago}', scheduled_at = '#{1.minutes.from_now}'
+          "
 
-        max = subject[:max_created_at]
-        expect(0..0.2).to include(max)
+          max = subject[:max_created_at]
+          expect(0..0.2).to include(max)
+        end
+
+        it 'reports time that the job has been ready once the scheduled_at is due' do
+          QueueClassicJob.last.update(created_at: 5.minutes.ago, scheduled_at: 1.minutes.ago)
+          expect(subject[:max_created_at]).to eq 240
+        end
       end
     end
 

@@ -60,7 +60,11 @@ module QueueClassicPlus
       conditions.unshift not_failed
       conditions.unshift "scheduled_at <= NOW()"
 
-      q = "SELECT EXTRACT(EPOCH FROM now() - #{column}) AS age_in_seconds
+      # This is to support `jobs_delayed.lag`. Basically, comparing the same column
+      # with itself to know max_age isn't helpful.
+      compare_time_to = column.to_s == 'scheduled_at' ? 'now()' : 'scheduled_at'
+
+      q = "SELECT EXTRACT(EPOCH FROM #{compare_time_to} - #{column}) AS age_in_seconds
            FROM queue_classic_jobs
            WHERE #{conditions.join(" AND ")}
            ORDER BY age_in_seconds DESC
