@@ -41,7 +41,7 @@ module QueueClassicPlus
     def self.late_count
       nb_late = execute("SELECT COUNT(1)
          FROM queue_classic_jobs
-         WHERE scheduled_at < NOW() AND #{not_failed}").first
+         WHERE scheduled_at < NOW() AND #{not_failed}")
       nb_late ? Integer(nb_late['count']) : 0
     end
 
@@ -49,7 +49,8 @@ module QueueClassicPlus
 
     def self.sql_group_count(sql)
       results = execute(sql)
-      results.map do |h|
+      results = [results] if Hash === results
+      Array(results).map do |h|
         {
           h.fetch("group") => Integer(h.fetch('count'))
         }
@@ -68,14 +69,15 @@ module QueueClassicPlus
            FROM queue_classic_jobs
            WHERE #{conditions.join(" AND ")}
            ORDER BY age_in_seconds DESC
+           LIMIT 1
            "
-       age_info = execute(q).first
+       age_info = execute(q)
 
        age_info ? age_info['age_in_seconds'].to_i : 0
     end
 
     def self.execute(q)
-      ActiveRecord::Base.connection.execute(q)
+      QC.default_conn_adapter.execute(q)
     end
 
     def self.not_failed

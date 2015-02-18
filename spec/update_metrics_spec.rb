@@ -1,16 +1,13 @@
 require 'spec_helper'
 
 describe QueueClassicPlus::UpdateMetrics do
-  class QueueClassicJob < ActiveRecord::Base
-  end
-
   describe ".update" do
     it "works" do
       QC.enqueue "puts"
 
       expect(QueueClassicPlus::Metrics).to(receive(:measure)).at_least(1).times do |metric, value, options|
-        expect(metric).to be_present
-        expect(value).to be_present
+        expect(metric).to_not be_nil
+        expect(value).to_not be_nil
       end
       described_class.update
     end
@@ -44,9 +41,7 @@ describe QueueClassicPlus::UpdateMetrics do
       end
 
       it "returns the age of the oldest lock" do
-        ActiveRecord::Base.connection.execute "
-          UPDATE queue_classic_jobs SET locked_at = '#{1.minute.ago}'
-        "
+        execute "UPDATE queue_classic_jobs SET locked_at = '#{Time.now - 60}'"
 
         max = subject[:max_locked_at]
         expect(59..61).to include(max)
@@ -54,10 +49,7 @@ describe QueueClassicPlus::UpdateMetrics do
 
       context 'scheduled jobs' do
         it 'reports the correct max_locked_at' do
-          qc_job = QueueClassicJob.last
-          qc_job.update(created_at: 5.minutes.ago,
-                        scheduled_at: 1.minutes.ago,
-                        locked_at: 30.seconds.ago)
+          execute "UPDATE queue_classic_jobs SET locked_at = '#{Time.now - 30}', scheduled_at = '#{Time.now - 60}', created_at = '#{Time.now - 5*60}'"
 
           expect(subject[:max_locked_at]).to eq 30
         end
@@ -72,9 +64,7 @@ describe QueueClassicPlus::UpdateMetrics do
 
       context 'scheduled jobs' do
         it "ignores jobs schedule in the future" do
-          ActiveRecord::Base.connection.execute "
-            UPDATE queue_classic_jobs SET created_at = '#{1.minute.ago}', scheduled_at = '#{1.minutes.from_now}'
-          "
+          execute "UPDATE queue_classic_jobs SET created_at = '#{Time.now - 60}', scheduled_at = '#{Time.now + 60}'"
 
           max = subject[:max_created_at]
           expect(0..0.2).to include(max)
@@ -82,7 +72,7 @@ describe QueueClassicPlus::UpdateMetrics do
 
         context 'after scheduled_at is passed' do
           it 'reports time that the job has been ready' do
-            QueueClassicJob.last.update(created_at: 5.minutes.ago, scheduled_at: 1.minutes.ago)
+            execute "UPDATE queue_classic_jobs SET created_at = '#{Time.now - 5*60}', scheduled_at = '#{Time.now - 60}'"
             expect(subject[:max_created_at]).to eq 240
           end
         end
@@ -91,9 +81,7 @@ describe QueueClassicPlus::UpdateMetrics do
 
     context "max_created_at.unlocked" do
       it "ignores lock jobs" do
-        ActiveRecord::Base.connection.execute "
-          UPDATE queue_classic_jobs SET locked_at = '#{1.minute.ago}', created_at = '#{2.minutes.ago}'
-        "
+        execute "UPDATE queue_classic_jobs SET locked_at = '#{Time.now - 60}', created_at = '#{Time.now - 2*60}'"
 
         max = subject["max_created_at.unlocked"]
         expect(max).to eq(0)
@@ -102,24 +90,21 @@ describe QueueClassicPlus::UpdateMetrics do
 
     context "jobs_delayed.lag" do
       it "returns the maximum different between the scheduled time and now" do
-        ActiveRecord::Base.connection.execute "
-          UPDATE queue_classic_jobs SET scheduled_at = '#{1.minute.ago}'"
+        execute "UPDATE queue_classic_jobs SET scheduled_at = '#{Time.now - 60}'"
 
         lag = subject["jobs_delayed.lag"]
         expect(lag).to be_within(1.0).of(60)
       end
 
       it "ignores jobs scheduled in the future" do
-        ActiveRecord::Base.connection.execute "
-          UPDATE queue_classic_jobs SET scheduled_at = '#{1.minute.from_now}'"
+        execute "UPDATE queue_classic_jobs SET scheduled_at = '#{Time.now + 60}'"
 
         lag = subject["jobs_delayed.lag"]
         expect(lag).to eq(0)
       end
 
       it "ignores the failed queue" do
-        ActiveRecord::Base.connection.execute "
-          UPDATE queue_classic_jobs SET scheduled_at = '#{1.minute.ago}', q_name = 'failed_jobs'"
+        execute "UPDATE queue_classic_jobs SET scheduled_at = '#{Time.now - 60}', q_name = 'failed_jobs'"
 
         lag = subject["jobs_delayed.lag"]
         expect(lag).to eq(0)

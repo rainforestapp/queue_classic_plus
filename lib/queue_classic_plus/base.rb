@@ -100,13 +100,32 @@ module QueueClassicPlus
     end
 
     def self.transaction(options = {}, &block)
-      ActiveRecord::Base.transaction(options, &block)
+      if defined?(ActiveRecord)
+        # If ActiveRecord is loaded, we use it's own transaction mechanisn since
+        # it has slightly different semanctics for rollback.
+        ActiveRecord::Base.transaction(options, &block)
+      else
+        begin
+          execute "BEGIN"
+          block.call
+        rescue
+          execute "ROLLBACK"
+          raise
+        end
+
+        execute "COMMIT"
+      end
     end
 
     # Debugging
     def self.list
       q = "SELECT * FROM queue_classic_jobs WHERE q_name = '#{@queue}'"
-      ActiveRecord::Base.connection.execute(q).to_a
+      execute q
+    end
+
+    private
+    def self.execute(sql, *args)
+      QC.default_conn_adapter.execute(sql, *args)
     end
   end
 end

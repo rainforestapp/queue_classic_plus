@@ -1,6 +1,8 @@
+require 'logger'
 require "queue_classic"
-require "active_record"
 require "active_support/core_ext/class/attribute"
+require "active_support/core_ext/string/inflections"
+
 
 require "queue_classic_plus/version"
 require "queue_classic_plus/metrics"
