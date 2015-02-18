@@ -18,7 +18,7 @@ module QueueClassicPlus
       {
         jobs_queued: jobs_queued,
         jobs_scheduled: jobs_scheduled,
-        max_created_at: max_age("created_at"),
+        max_created_at: max_age("created_at", "created_at = scheduled_at"),
         max_locked_at: max_age("locked_at", "locked_at IS NOT NULL"),
         "max_created_at.unlocked" => max_age("locked_at", "locked_at IS NULL"),
         "jobs_delayed.lag" => max_age("scheduled_at"),
@@ -61,11 +61,7 @@ module QueueClassicPlus
       conditions.unshift not_failed
       conditions.unshift "scheduled_at <= NOW()"
 
-      # This is to support `jobs_delayed.lag`. Basically, comparing the same column
-      # with itself to know max_age isn't helpful.
-      reference_time = column.to_s == 'created_at' ? 'scheduled_at' : 'now()'
-
-      q = "SELECT EXTRACT(EPOCH FROM #{reference_time} - #{column}) AS age_in_seconds
+      q = "SELECT EXTRACT(EPOCH FROM now() - #{column}) AS age_in_seconds
            FROM queue_classic_jobs
            WHERE #{conditions.join(" AND ")}
            ORDER BY age_in_seconds DESC
