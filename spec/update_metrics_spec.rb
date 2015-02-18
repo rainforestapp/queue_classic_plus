@@ -51,7 +51,7 @@ describe QueueClassicPlus::UpdateMetrics do
         it 'reports the correct max_locked_at' do
           execute "UPDATE queue_classic_jobs SET locked_at = '#{Time.now - 30}', scheduled_at = '#{Time.now - 60}', created_at = '#{Time.now - 5*60}'"
 
-          expect(subject[:max_locked_at]).to eq 30
+          expect(subject[:max_locked_at]).to be_within(1).of(30)
         end
       end
     end
@@ -73,7 +73,7 @@ describe QueueClassicPlus::UpdateMetrics do
         context 'after scheduled_at is passed' do
           it 'reports time that the job has been ready' do
             execute "UPDATE queue_classic_jobs SET created_at = '#{Time.now - 5*60}', scheduled_at = '#{Time.now - 60}'"
-            expect(subject[:max_created_at]).to eq 240
+            expect(subject[:max_created_at]).to be_within(1).of(240)
           end
         end
       end
