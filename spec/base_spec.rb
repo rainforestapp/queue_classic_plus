@@ -17,9 +17,8 @@ describe QueueClassicPlus::Base do
 
       it "does allow multiple enqueues if something got locked for too long" do
         subject.do
-        ActiveRecord::Base.connection.execute "
-          UPDATE queue_classic_jobs SET locked_at = '#{1.day.ago.to_s}' WHERE q_name = 'test'
-        "
+        one_day_ago = Time.now - 60*60*24
+        execute "UPDATE queue_classic_jobs SET locked_at = '#{one_day_ago}' WHERE q_name = 'test'"
         subject.do
         subject.should have_queue_size_of(2)
       end
@@ -40,8 +39,8 @@ describe QueueClassicPlus::Base do
       end
 
       it "calls perform in a transaction" do
-        ActiveRecord::Base.should_receive(:transaction).and_call_original
-        subject._perform 
+        QueueClassicPlus::Base.should_receive(:transaction).and_call_original
+        subject._perform
       end
 
       it "measures the time" do
@@ -62,8 +61,8 @@ describe QueueClassicPlus::Base do
       end
 
       it "calls perform outside of a transaction" do
-        ActiveRecord::Base.should_not_receive(:transaction)
-        subject._perform 
+        QueueClassicPlus::Base.should_not_receive(:transaction)
+        subject._perform
       end
     end
 
