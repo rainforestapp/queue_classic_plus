@@ -17,7 +17,7 @@ describe QueueClassicPlus::CustomWorker do
       job[:args].should == [1, 2, 3]
       full_job = find_job(job[:id])
 
-      full_job[:last_error].should_not be_nil
+      full_job['last_error'].should_not be_nil
     end
 
     it "records normal errors" do

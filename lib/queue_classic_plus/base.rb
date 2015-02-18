@@ -98,7 +98,7 @@ module QueueClassicPlus
     end
 
     def self.librato_key
-      (self.name || "").underscore.gsub(/\//, ".")
+      Inflector.underscore(self.name || "").gsub(/\//, ".")
     end
 
     def self.transaction(options = {}, &block)
