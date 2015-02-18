@@ -80,11 +80,14 @@ describe QueueClassicPlus::UpdateMetrics do
           expect(0..0.2).to include(max)
         end
 
-        context 'after scheduled_at is passed' do
-          it 'reports time that the job has been ready' do
-            QueueClassicJob.last.update(created_at: 5.minutes.ago, scheduled_at: 1.minutes.ago)
-            expect(subject[:max_created_at]).to eq 240
-          end
+        it 'reports time only for jobs that were never scheduled for future' do
+          QueueClassicJob.delete_all
+          QC.enqueue 'puts'
+          QC.enqueue_in 1, 'puts'
+          one_min_ago = 1.minute.ago
+          QueueClassicJob.last.update(created_at: 2.minutes.ago, scheduled_at: one_min_ago)
+          QueueClassicJob.first.update(created_at: one_min_ago, scheduled_at: one_min_ago)
+          expect(subject[:max_created_at]).to be_within(1).of(60)
         end
       end
     end
