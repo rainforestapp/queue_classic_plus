@@ -87,7 +87,7 @@ describe QueueClassicPlus::UpdateMetrics do
           one_min_ago = 1.minute.ago
           QueueClassicJob.last.update(created_at: 2.minutes.ago, scheduled_at: one_min_ago)
           QueueClassicJob.first.update(created_at: one_min_ago, scheduled_at: one_min_ago)
-          expect(subject[:max_created_at]).to eq 60
+          expect(subject[:max_created_at]).to be_within(1).of(60)
         end
       end
     end
