@@ -1,10 +1,10 @@
 require 'logger'
 require "queue_classic"
-require "active_support/core_ext/class/attribute"
 require "active_support/core_ext/string/inflections"
 
 
 require "queue_classic_plus/version"
+require "queue_classic_plus/inheritable_attr"
 require "queue_classic_plus/metrics"
 require "queue_classic_plus/update_metrics"
 require "queue_classic_plus/base"

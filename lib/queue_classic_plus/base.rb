@@ -1,13 +1,15 @@
 module QueueClassicPlus
   class Base
+    extend QueueClassicPlus::InheritableAttribute
+
     def self.queue
       QC::Queue.new(@queue)
     end
 
-    class_attribute :locked
-    class_attribute :skip_transaction
-    class_attribute :retries_on
-    class_attribute :max_retries
+    inheritable_attr :locked
+    inheritable_attr :skip_transaction
+    inheritable_attr :retries_on
+    inheritable_attr :max_retries
 
     self.max_retries = 0
     self.retries_on = {}
