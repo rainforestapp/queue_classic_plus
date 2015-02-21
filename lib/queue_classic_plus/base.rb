@@ -50,8 +50,9 @@ module QueueClassicPlus
                  FROM queue_classic_jobs
                  WHERE q_name = $1 AND method = $2 AND args::text = $3::text
                    AND (locked_at IS NULL OR locked_at > current_timestamp - interval '#{max_lock_time} seconds')
+                 LIMIT 1
                )
-             as x"
+             AS x"
 
         result = QC.default_conn_adapter.execute(q, @queue, method, args.to_json)
         result['count'].to_i == 0
