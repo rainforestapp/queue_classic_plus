@@ -8,6 +8,7 @@ module QueueClassicPlus
 
     inheritable_attr :locked
     inheritable_attr :skip_transaction
+    inheritable_attr :isolation_level
     inheritable_attr :retries_on
     inheritable_attr :max_retries
 
@@ -29,6 +30,14 @@ module QueueClassicPlus
 
     def self.skip_transaction!
       self.skip_transaction = true
+    end
+
+    def self.isolation_level! level
+      unless %i(serializable repeatable_read read_committed read_uncommitted).include? level
+        raise "Invalid isolation level: #{level}"
+      end
+
+      self.isolation_level = level
     end
 
     def self.locked?
@@ -106,10 +115,14 @@ module QueueClassicPlus
       if defined?(ActiveRecord)
         # If ActiveRecord is loaded, we use it's own transaction mechanisn since
         # it has slightly different semanctics for rollback.
-        ActiveRecord::Base.transaction(options, &block)
+        ActiveRecord::Base.transaction(options) do
+          set_isolation_level
+          block.call
+        end
       else
         begin
           execute "BEGIN"
+          set_isolation_level
           block.call
         rescue
           execute "ROLLBACK"
@@ -129,6 +142,13 @@ module QueueClassicPlus
     private
     def self.execute(sql, *args)
       QC.default_conn_adapter.execute(sql, *args)
+    end
+
+    def self.set_isolation_level
+      return unless isolation_level
+
+      level = isolation_level.to_s.gsub('_', ' ').upcase
+      execute "SET TRANSACTION ISOLATION LEVEL #{level}"
     end
   end
 end
