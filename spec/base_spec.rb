@@ -45,7 +45,7 @@ describe QueueClassicPlus::Base do
 
       it "measures the time" do
         QueueClassicPlus::Metrics.should_receive(:timing).with("qu_perform_time", {source: "funky.name"}).and_call_original
-        subject._perform 
+        subject._perform
       end
     end
 
@@ -62,6 +62,29 @@ describe QueueClassicPlus::Base do
 
       it "calls perform outside of a transaction" do
         QueueClassicPlus::Base.should_not_receive(:transaction)
+        subject._perform
+      end
+    end
+
+    context 'with isolation level' do
+      subject do
+        Class.new(QueueClassicPlus::Base) do
+          @queue = :test
+          isolation_level! :repeatable_read
+
+          def self.perform
+          end
+        end
+      end
+
+      let(:transaction_sql) do
+        'SET TRANSACTION ISOLATION LEVEL REPEATABLE READ'
+      end
+
+      it 'sets the Postgres isolation level' do
+        ['BEGIN', transaction_sql, 'COMMIT'].each do |statement|
+          expect(QueueClassicPlus::Base).to receive(:execute).with statement
+        end
         subject._perform
       end
     end
@@ -152,4 +175,3 @@ describe QueueClassicPlus::Base do
     end
   end
 end
-

@@ -100,6 +100,11 @@ Jobs::UpdateMetrics.do 'type_a' # enqueues job
 Jobs::UpdateMetrics.do 'type_a' # does not enqueues job since it's already queued
 Jobs::UpdateMetrics.do 'type_b' # enqueues job as the arguments are different.
 ```
+#### Transaction
+
+By default, all QueueClassicPlus jobs are executed in a PostgreSQL transaction. This decision was made because most jobs are usually pretty small and it's preferable to have all the benefits of the transaction.
+
+You can disable this feature on a per job basis in the follwing way:
 
 ```ruby
 class Jobs::NoTransaction < QueueClassicPlus::Base
@@ -114,11 +119,23 @@ class Jobs::NoTransaction < QueueClassicPlus::Base
 end
 ```
 
-#### Transaction
+#### Isolation levels
 
-By default, all QueueClassicPlus jobs are executed in a PostgreSQL transaction. This decision was made because most jobs are usually pretty small and it's preferable to have all the benefits of the transaction.
+QueueClassicPlus jobs can have also set their transaction isolation
+level on a per-job basis like so:
 
-You can disable this feature on a per job basis in the follwing way:
+```ruby
+class Jobs::Repeatable < QueueClassicPlus::Base
+  # Set transaction level to REPEATABLE READ
+  isolation_level! :repeatable_read
+
+  @queue = :low
+
+  def self.perform
+    # ...
+  end
+end
+```
 
 ## Advanced configuration
 
