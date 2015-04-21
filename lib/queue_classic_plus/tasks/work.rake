@@ -11,11 +11,13 @@ namespace :qc_plus do
         exit(1)
       end
       @worker.stop
+      exit
     end
 
     trap('TERM') do
       $stderr.puts("Received Term. Shutting down.")
       @worker.stop
+      exit
     end
 
     @worker.start
