@@ -2,6 +2,15 @@ namespace :qc_plus do
   desc "Start a new worker for the (default or $QUEUE) queue"
   task :work  => :environment do
     puts "Starting up worker for queue #{ENV['QUEUE']}"
+
+    if defined? Raven
+      Raven.configure do |config|
+        # ActiveRecord::RecordNotFound is ignored by Raven by default,
+        # which shouldn't happen in background jobs.
+        config.excluded_exceptions = []
+      end
+    end
+
     @worker = QueueClassicPlus::CustomWorker.new
 
     trap('INT') do
