@@ -26,7 +26,7 @@ module QueueClassicPlus
   end
 
   def self.exception_handler
-    @exception_handler ||= -> (exception, job) { nil }
+    @exception_handler ||= ->(exception, job) { nil }
   end
 
   def self.exception_handler=(handler)
