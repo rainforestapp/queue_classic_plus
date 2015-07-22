@@ -18,7 +18,7 @@ module QueueClassicPlus
 
       # The mailers doesn't have a retries_on?
       if klass && klass.respond_to?(:retries_on?) && klass.retries_on?(e)
-        remaining_retries = job[:remaining_retries] || klass.max_retries
+        remaining_retries = (job[:remaining_retries] || klass.max_retries).to_i
         remaining_retries -= 1
 
         if remaining_retries > 0
