@@ -92,6 +92,9 @@ module QueueClassicPlus
           perform *args
         else
           transaction do
+            # .to_i defaults to 0, which means no timeout in postgres
+            timeout = ENV['POSTGRES_STATEMENT_TIMEOUT'].to_i * 1000
+            execute "SET LOCAL statement_timeout = #{timeout}"
             perform *args
           end
         end

@@ -116,7 +116,12 @@ end
 
 #### Transaction
 
-By default, all QueueClassicPlus jobs are executed in a PostgreSQL transaction. This decision was made because most jobs are usually pretty small and it's preferable to have all the benefits of the transaction.
+By default, all QueueClassicPlus jobs are executed in a PostgreSQL
+transaction. This decision was made because most jobs are usually
+pretty small and it's preferable to have all the benefits of the
+transaction. You can optionally specify a postgres statement timeout
+(in seconds) for all transactions with the environment variable
+`POSTGRES_STATEMENT_TIMEOUT`.
 
 You can disable this feature on a per job basis in the follwing way:
 
