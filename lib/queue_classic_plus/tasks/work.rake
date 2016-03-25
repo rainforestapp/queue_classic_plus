@@ -29,6 +29,8 @@ namespace :qc_plus do
       exit
     end
 
+    ::Rails.application.eager_load!
+
     @worker.start
   end
 end
