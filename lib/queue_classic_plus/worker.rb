@@ -22,7 +22,9 @@ module QueueClassicPlus
       begin
         QC.default_conn_adapter.execute 'ROLLBACK'
       rescue PG::UnableToSend => e
-        QueueClassicPlus.logger.info "Rollback failed for job #{job[:id]}: {e.message}"
+        # Using a new connection because the default connection was killed
+        QueueClassicPlus.logger.info "Creating new connection for job #{job[:id]}"
+        QC.default_conn_adapter = QC::ConnAdapter.new
       end
       klass = job_klass(job)
 
