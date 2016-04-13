@@ -19,7 +19,11 @@ module QueueClassicPlus
       # not have kicked in yet and we might be in a failed transaction. To be
       # *absolutely* sure the retry/failure gets enqueued, we do a rollback just
       # in case (and if we're not in a transaction it will be a no-op).
-      QC.default_conn_adapter.execute 'ROLLBACK'
+      begin
+        QC.default_conn_adapter.execute 'ROLLBACK'
+      rescue PG::UnableToSend => e
+        QueueClassicPlus.logger.info "Rollback failed for job #{job[:id]}: {e.message}"
+      end
       klass = job_klass(job)
 
       # The mailers doesn't have a retries_on?
