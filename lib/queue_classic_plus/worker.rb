@@ -24,7 +24,12 @@ module QueueClassicPlus
       rescue PG::UnableToSend => e
         # Using a new connection because the default connection was killed
         QueueClassicPlus.logger.info "Creating new connection for job #{job[:id]}"
-        QC.default_conn_adapter = QC::ConnAdapter.new
+        if defined?(ActiveRecord)
+          ActiveRecord::Base.establish_connection
+          QC.default_conn_adapter = QC::ConnAdapter.new(ActiveRecord::Base.connection.raw_connection)
+        else
+          QC.default_conn_adapter = QC::ConnAdapter.new
+        end
       end
       klass = job_klass(job)
 
