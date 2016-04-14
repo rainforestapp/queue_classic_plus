@@ -1,6 +1,10 @@
 language: ruby
 before_script:
   - psql -c 'create database queue_classic_plus_test;' -U postgres
+  - export QC_DATABASE_URL="postgres://postgres@localhost/queue_classic_plus_test"
+  - ruby -r queue_classic -e "QC::Setup.create"
+  - psql -U postgres -d queue_classic_plus_test -c 'ALTER TABLE queue_classic_jobs ADD COLUMN last_error TEXT'
+  - psql -U postgres -d queue_classic_plus_test -c 'ALTER TABLE queue_classic_jobs ADD COLUMN remaining_retries INTEGER'
 
 rvm:
   - 2.0.0
