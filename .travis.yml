@@ -1,4 +1,6 @@
 language: ruby
+before_install:
+  - gem update bundler
 before_script:
   - psql -c 'create database queue_classic_plus_test;' -U postgres
 
