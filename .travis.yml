@@ -1,6 +1,6 @@
 language: ruby
 before_script:
-  - gem update bundler
+  - gem install bundler -v 1.9.10
   - psql -c 'create database queue_classic_plus_test;' -U postgres
   - export QC_DATABASE_URL="postgres://postgres@localhost/queue_classic_plus_test"
   - ruby -r queue_classic -e "QC::Setup.create"
