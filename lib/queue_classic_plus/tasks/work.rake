@@ -16,19 +16,17 @@ namespace :qc_plus do
     trap('INT') do
       $stderr.puts("Received INT. Shutting down.")
       if !@worker.running
-        $stderr.puts("Worker has stopped running. Exit.")
-        exit(1)
+        $stderr.puts("Worker has already stopped running.")
       end
       @worker.stop
-      exit
     end
 
     trap('TERM') do
       $stderr.puts("Received Term. Shutting down.")
       @worker.stop
-      exit
     end
 
     @worker.start
+    $stderr.puts 'Shut down successfully'
   end
 end
