@@ -1,6 +1,7 @@
 language: ruby
 before_install:
   - gem update bundler
+install: bundle install --without development
 before_script:
   - psql -c 'create database queue_classic_plus_test;' -U postgres
 
@@ -8,3 +9,4 @@ rvm:
   - 2.0.0
   - 2.1.5
   - 2.2.0
+  - 2.3.1
