@@ -21,6 +21,7 @@ module Jobs
     class TestJobNoRetry < QueueClassicPlus::Base
       class Custom < RuntimeError
       end
+      disable_retries!
 
       @queue = :low
 

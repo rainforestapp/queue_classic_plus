@@ -65,24 +65,66 @@ describe QueueClassicPlus::CustomWorker do
       end
     end
 
-    it "enqueues in the failed queue when retries have been exhausted" do
-      job_type.max_retries = 0
-      expect do
+    context 'with a connection failure' do
+      before do
+        original_execute = QC.default_conn_adapter.method(:execute)
+        allow(QC.default_conn_adapter).to receive(:execute) do |*args|
+          if args.first == 'ROLLBACK'
+            raise PG::UnableToSend
+          else
+            original_execute.call(*args)
+          end
+        end
+      end
+
+      it 'retries without incrementing retries' do
         job_type.enqueue_perform(true)
-      end.to change_queue_size_of(job_type).by(1)
+        Timecop.freeze do
+          worker.work
+          expect(failed_queue.count).to eq 0
+          QueueClassicMatchers::QueueClassicRspec.find_by_args('low', 'Jobs::Tests::LockedTestJob._perform', [true]).first['remaining_retries'].should eq "5"
+        end
+      end
 
-      Jobs::Tests::LockedTestJob.should have_queue_size_of(1)
-      failed_queue.count.should == 0
-      QueueClassicMatchers::QueueClassicRspec.find_by_args('low', 'Jobs::Tests::LockedTestJob._perform', [true]).first['remaining_retries'].should be_nil
+      context 'with retries disabled for the class' do
+        let(:job_type) { Jobs::Tests::TestJobNoRetry }
 
-      Timecop.freeze do
-        worker.work
+        it 'enqueues the failed queue' do
+          job_type.enqueue_perform(true)
+          Timecop.freeze do
+            worker.work
+            expect(failed_queue.count).to eq 1
+          end
+        end
+      end
+    end
 
-        QueueClassicMatchers::QueueClassicRspec.find_by_args('failed_jobs', 'Jobs::Tests::LockedTestJob._perform', [true]).first['remaining_retries'].should be_nil
-        failed_queue.count.should == 1 # not enqueued on Failed
-        Jobs::Tests::LockedTestJob.should_not have_scheduled(true).at(Time.now + described_class::BACKOFF_WIDTH) # should have scheduled a retry for later
+    context 'when retries have been exhausted' do
+      before do
+        job_type.max_retries = 0
+      end
+
+      after do
+        job_type.max_retries = 5
+      end
+
+      it 'enqueues in the failed queue' do
+        expect do
+          job_type.enqueue_perform(true)
+        end.to change_queue_size_of(job_type).by(1)
+
+        Jobs::Tests::LockedTestJob.should have_queue_size_of(1)
+        failed_queue.count.should == 0
+        QueueClassicMatchers::QueueClassicRspec.find_by_args('low', 'Jobs::Tests::LockedTestJob._perform', [true]).first['remaining_retries'].should be_nil
+
+        Timecop.freeze do
+          worker.work
+
+          QueueClassicMatchers::QueueClassicRspec.find_by_args('failed_jobs', 'Jobs::Tests::LockedTestJob._perform', [true]).first['remaining_retries'].should be_nil
+          failed_queue.count.should == 1 # not enqueued on Failed
+          Jobs::Tests::LockedTestJob.should_not have_scheduled(true).at(Time.now + described_class::BACKOFF_WIDTH) # should have scheduled a retry for later
+        end
       end
     end
   end
 end
-
