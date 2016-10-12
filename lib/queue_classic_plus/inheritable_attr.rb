@@ -28,7 +28,7 @@ module QueueClassicPlus
       end
 
       def self.uncloneable
-        [Symbol, TrueClass, FalseClass, NilClass]
+        [Symbol, TrueClass, FalseClass, NilClass, Fixnum]
       end
     end
   end

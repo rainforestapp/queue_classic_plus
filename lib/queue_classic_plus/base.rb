@@ -10,17 +10,30 @@ module QueueClassicPlus
     inheritable_attr :skip_transaction
     inheritable_attr :retries_on
     inheritable_attr :max_retries
+    inheritable_attr :disable_retries
 
     self.max_retries = 0
     self.retries_on = {}
+    self.disable_retries = false
 
     def self.retry!(on: RuntimeError, max: 5)
+      if self.disable_retries
+        raise 'retry! should not be used in conjuction with disable_retries!'
+      end
       Array(on).each {|e| self.retries_on[e] = true}
       self.max_retries = max
     end
 
     def self.retries_on? exception
       self.retries_on[exception.class] || self.retries_on.keys.any? {|klass| exception.is_a? klass}
+    end
+
+    def self.disable_retries!
+      unless self.retries_on.empty?
+        raise 'disable_retries! should not be enabled in conjunction with retry!'
+      end
+
+      self.disable_retries = true
     end
 
     def self.lock!
