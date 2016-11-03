@@ -65,35 +65,37 @@ describe QueueClassicPlus::CustomWorker do
       end
     end
 
-    context 'with a connection failure' do
-      before do
-        original_execute = QC.default_conn_adapter.method(:execute)
-        allow(QC.default_conn_adapter).to receive(:execute) do |*args|
-          if args.first == 'ROLLBACK'
-            raise PG::UnableToSend
-          else
-            original_execute.call(*args)
+    [PG::UnableToSend, PG::ConnectionBad].each do |exception|
+      context "with a #{exception} exception" do
+        before do
+          original_execute = QC.default_conn_adapter.method(:execute)
+          allow(QC.default_conn_adapter).to receive(:execute) do |*args|
+            if args.first == 'ROLLBACK'
+              raise exception
+            else
+              original_execute.call(*args)
+            end
           end
         end
-      end
 
-      it 'retries without incrementing retries' do
-        job_type.enqueue_perform(true)
-        Timecop.freeze do
-          worker.work
-          expect(failed_queue.count).to eq 0
-          QueueClassicMatchers::QueueClassicRspec.find_by_args('low', 'Jobs::Tests::LockedTestJob._perform', [true]).first['remaining_retries'].should eq "5"
-        end
-      end
-
-      context 'with retries disabled for the class' do
-        let(:job_type) { Jobs::Tests::TestJobNoRetry }
-
-        it 'enqueues the failed queue' do
+        it 'retries without incrementing retries' do
           job_type.enqueue_perform(true)
           Timecop.freeze do
             worker.work
-            expect(failed_queue.count).to eq 1
+            expect(failed_queue.count).to eq 0
+            QueueClassicMatchers::QueueClassicRspec.find_by_args('low', 'Jobs::Tests::LockedTestJob._perform', [true]).first['remaining_retries'].should eq "5"
+          end
+        end
+
+        context 'with retries disabled for the class' do
+          let(:job_type) { Jobs::Tests::TestJobNoRetry }
+
+          it 'enqueues the failed queue' do
+            job_type.enqueue_perform(true)
+            Timecop.freeze do
+              worker.work
+              expect(failed_queue.count).to eq 1
+            end
           end
         end
       end
