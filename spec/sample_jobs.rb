@@ -40,5 +40,21 @@ module Jobs
       end
     end
 
+    class Exception < RuntimeError
+      attr_reader :original_exception
+
+      def initialize(e)
+        @original_exception = e
+      end
+    end
+
+    class ConnectionReapedTestJob < QueueClassicPlus::Base
+      @queue = :low
+      retry! on: Exception, max: 5
+
+      def self.perform
+        raise Exception.new(PG::UnableToSend.new)
+      end
+    end
   end
 end

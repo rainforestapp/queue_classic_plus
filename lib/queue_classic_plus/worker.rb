@@ -16,23 +16,17 @@ module QueueClassicPlus
       QueueClassicPlus.logger.info "Handling exception #{e.message} for job #{job[:id]}"
 
       force_retry = false
-      begin
+      if e.respond_to?(:original_exception) && e.original_exception.is_a?(PG::Error)
         # If we've got here, unfortunately ActiveRecord's rollback mechanism may
         # not have kicked in yet and we might be in a failed transaction. To be
         # *absolutely* sure the retry/failure gets enqueued, we do a rollback
         # just in case (and if we're not in a transaction it will be a no-op).
-        QC.default_conn_adapter.execute 'ROLLBACK'
-      rescue PG::UnableToSend, PG::ConnectionBad => e
+        QueueClassicPlus.logger.info "Reset connection for job #{job[:id]}"
+        @conn_adapter.connection.reset
+        @conn_adapter.execute 'ROLLBACK'
+
         # We definitely want to retry because the connection was lost mid-task.
         force_retry = true
-        # Using a new connection because the default connection was killed
-        QueueClassicPlus.logger.info "Creating new connection for job #{job[:id]}"
-        if defined?(ActiveRecord)
-          ActiveRecord::Base.establish_connection
-          QC.default_conn_adapter = QC::ConnAdapter.new(ActiveRecord::Base.connection.raw_connection)
-        else
-          QC.default_conn_adapter = QC::ConnAdapter.new
-        end
       end
       klass = job_klass(job)
 
