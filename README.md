@@ -2,11 +2,11 @@
 
 [![Build Status](https://travis-ci.org/rainforestapp/queue_classic_plus.svg?branch=master)](https://travis-ci.org/rainforestapp/queue_classic_plus)
 
-[queue_classic](https://github.com/QueueClassic/queue_classic) is a simple Postgresql backed DB queue. However, it's a little too simple to use it as the main queueing system of a medium to large app.
+[queue_classic](https://github.com/QueueClassic/queue_classic) is a simple Postgresql backed DB queue. However, it's a little too simple to use it as the main queueing system of a medium to large app. This was developed at [Rainforest QA](https://www.rainforestqa.com/).
 
 QueueClassicPlus adds many lacking features to QueueClassic.
 
-- Standard job format
+- Standardized job format
 - Retry on specific exceptions
 - Singleton jobs
 - Metrics
@@ -101,7 +101,7 @@ Jobs::UpdateMetrics.do 'type_a' # does not enqueues job since it's already queue
 Jobs::UpdateMetrics.do 'type_b' # enqueues job as the arguments are different.
 ```
 
-#### Transaction
+#### Transactions
 
 By default, all QueueClassicPlus jobs are executed in a PostgreSQL
 transaction. This decision was made because most jobs are usually
@@ -116,7 +116,6 @@ You can disable this feature on a per job basis in the following way:
 class Jobs::NoTransaction < QueueClassicPlus::Base
   # Don't run the perform method in a transaction
   skip_transaction!
-
   @queue = :low
 
   def self.perform(user_id)
