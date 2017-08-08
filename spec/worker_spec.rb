@@ -85,6 +85,17 @@ describe QueueClassicPlus::CustomWorker do
       end
     end
 
+    context 'with non-connection based PG jobs' do
+      before { Jobs::Tests::UniqueViolationTestJob.enqueue_perform }
+
+      it 'sends the job to the failed jobs queue' do
+        Timecop.freeze do
+          worker.work
+        end
+        expect(failed_queue.count).to eq 1
+      end
+    end
+
     context 'when retries have been exhausted' do
       before do
         job_type.max_retries = 0

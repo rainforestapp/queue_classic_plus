@@ -1,5 +1,9 @@
+require 'pg'
+require 'queue_classic'
+
 module QueueClassicPlus
   class CustomWorker < QC::Worker
+    CONNECTION_ERRORS = [PG::UnableToSend, PG::ConnectionBad].freeze
     BACKOFF_WIDTH = 10
     FailedQueue = QC::Queue.new("failed_jobs")
 
@@ -16,7 +20,7 @@ module QueueClassicPlus
       QueueClassicPlus.logger.info "Handling exception #{e.message} for job #{job[:id]}"
 
       force_retry = false
-      if e.respond_to?(:original_exception) && e.original_exception.is_a?(PG::Error)
+      if connection_error?(e)
         # If we've got here, unfortunately ActiveRecord's rollback mechanism may
         # not have kicked in yet and we might be in a failed transaction. To be
         # *absolutely* sure the retry/failure gets enqueued, we do a rollback
@@ -59,6 +63,12 @@ module QueueClassicPlus
       rescue NameError
         nil
       end
+    end
+
+    def connection_error?(e)
+      CONNECTION_ERRORS.any? { |klass| e.kind_of? klass } ||
+        (e.respond_to?(:original_exception) &&
+         CONNECTION_ERRORS.any? { |klass| e.original_exception.kind_of? klass })
     end
   end
 end
