@@ -28,7 +28,9 @@ module QueueClassicPlus
       end
 
       def self.uncloneable
-        [Symbol, TrueClass, FalseClass, NilClass, Fixnum]
+        tmp = [Symbol, TrueClass, FalseClass, NilClass]
+        tmp += [Fixnum, Bignum] if RUBY_VERSION < '2.4.0'
+        tmp
       end
     end
   end
