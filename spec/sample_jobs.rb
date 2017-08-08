@@ -1,3 +1,5 @@
+require 'pg'
+
 class SomeException < RuntimeError
 end
 
@@ -54,6 +56,14 @@ module Jobs
 
       def self.perform
         raise Exception.new(PG::UnableToSend.new)
+      end
+    end
+
+    class UniqueViolationTestJob < QueueClassicPlus::Base
+      @queue = :low
+
+      def self.perform
+        raise Exception.new(PG::UniqueViolation.new)
       end
     end
   end
