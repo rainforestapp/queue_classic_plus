@@ -84,9 +84,15 @@ describe QueueClassicPlus::UpdateMetrics do
     context "max_created_at.unlocked" do
       it "ignores lock jobs" do
         execute "UPDATE queue_classic_jobs SET locked_at = '#{Time.now - 60}', created_at = '#{Time.now - 2*60}'"
+        execute "UPDATE queue_classic_jobs SET locked_at = NULL, created_at = '#{Time.now - 90}' WHERE id IN (SELECT id FROM queue_classic_jobs LIMIT 1)"
+
+        # ensure that they are all counted by the #jobs_queued method
+        execute "UPDATE queue_classic_jobs SET scheduled_at = '#{Time.now - 5}'"
+
+        expect(described_class.jobs_queued[0]['default']).to eq(3)
 
         max = subject["max_created_at.unlocked"]
-        expect(max).to eq(0)
+        expect(max).to be_within(1).of(90)
       end
     end
 

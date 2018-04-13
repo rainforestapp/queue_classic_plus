@@ -20,7 +20,7 @@ module QueueClassicPlus
         jobs_scheduled: jobs_scheduled,
         max_created_at: max_age("created_at", "created_at = scheduled_at"),
         max_locked_at: max_age("locked_at", "locked_at IS NOT NULL"),
-        "max_created_at.unlocked" => max_age("locked_at", "locked_at IS NULL"),
+        "max_created_at.unlocked" => max_age("created_at", "locked_at IS NULL"),
         "jobs_delayed.lag" => max_age("scheduled_at"),
         "jobs_delayed.late_count" => late_count,
       }
