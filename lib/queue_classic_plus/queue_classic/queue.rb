@@ -6,7 +6,7 @@ module QC
         s = "INSERT INTO #{TABLE_NAME} (q_name, method, args, scheduled_at, remaining_retries)
              VALUES ($1, $2, $3, now() + interval '#{seconds.to_i} seconds', $4)"
 
-        res = conn_adapter.execute(s, name, method, JSON.dump(args), remaining_retries)
+        conn_adapter.execute(s, name, method, JSON.dump(args), remaining_retries)
       end
     end
 
