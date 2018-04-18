@@ -68,11 +68,11 @@ describe QueueClassicPlus::CustomWorker do
     context 'when PG connection reaped during a job' do
       before { Jobs::Tests::ConnectionReapedTestJob.enqueue_perform }
 
-      it 'retries without incrementing retries' do
+      it 'retries' do
         Timecop.freeze do
           worker.work
           expect(failed_queue.count).to eq 0
-          QueueClassicMatchers::QueueClassicRspec.find_by_args('low', 'Jobs::Tests::ConnectionReapedTestJob._perform', []).first['remaining_retries'].should eq "5"
+          QueueClassicMatchers::QueueClassicRspec.find_by_args('low', 'Jobs::Tests::ConnectionReapedTestJob._perform', []).first['remaining_retries'].should eq "4"
         end
       end
 

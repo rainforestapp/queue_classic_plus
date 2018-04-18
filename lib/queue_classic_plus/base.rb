@@ -12,7 +12,7 @@ module QueueClassicPlus
     inheritable_attr :max_retries
     inheritable_attr :disable_retries
 
-    self.max_retries = 0
+    self.max_retries = 5
     self.retries_on = {}
     self.disable_retries = false
 
@@ -102,13 +102,13 @@ module QueueClassicPlus
     def self._perform(*args)
       Metrics.timing("qu_perform_time", source: librato_key) do
         if skip_transaction
-          perform *args
+          perform(*args)
         else
           transaction do
             # .to_i defaults to 0, which means no timeout in postgres
             timeout = ENV['POSTGRES_STATEMENT_TIMEOUT'].to_i * 1000
             execute "SET LOCAL statement_timeout = #{timeout}"
-            perform *args
+            perform(*args)
           end
         end
       end

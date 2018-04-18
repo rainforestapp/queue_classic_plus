@@ -32,28 +32,43 @@ module QueueClassicPlus
         # We definitely want to retry because the connection was lost mid-task.
         force_retry = true
       end
+
       klass = job_klass(job)
 
       if force_retry && !(klass.respond_to?(:disable_retries) && klass.disable_retries)
-        klass_retries = klass.respond_to?(:max_retries) ? klass.max_retries : 0
-        klass.restart_in(0, (job[:remaining_retries] || klass_retries || 0).to_i, *job[:args])
+        Metrics.increment("qc.force_retry", source: @q_name)
+
+        retry_with_remaining(klass: klass, job: job, e: e, backoff: 0)
       # The mailers doesn't have a retries_on?
       elsif klass && klass.respond_to?(:retries_on?) && klass.retries_on?(e)
-        remaining_retries = (job[:remaining_retries] || klass.max_retries).to_i
-        remaining_retries -= 1
+        Metrics.increment("qc.retry", source: @q_name)
 
-        if remaining_retries > 0
-          klass.restart_in((klass.max_retries - remaining_retries) * BACKOFF_WIDTH,
-                           remaining_retries,
-                           *job[:args])
-        else
-          enqueue_failed(job, e)
-        end
+        backoff = (max_retries(klass) - remaining_retries(klass, job)) * BACKOFF_WIDTH
+
+        retry_with_remaining(klass: klass, job: job, e: e, backoff: backoff)
       else
         enqueue_failed(job, e)
       end
 
       FailedQueue.delete(job[:id])
+    end
+
+    def retry_with_remaining(klass:, job:, e:, backoff:)
+      @remaining_retries = remaining_retries(klass, job)
+
+      if @remaining_retries > 0
+        klass.restart_in(backoff, @remaining_retries, *job[:args])
+      else
+        enqueue_failed(job, e)
+      end
+    end
+
+    def max_retries(klass)
+      klass.respond_to?(:max_retries) ? klass.max_retries : 5
+    end
+
+    def remaining_retries(klass, job)
+      @remaining_retries ? @remaining_retries - 1 : (job[:remaining_retries] || max_retries(klass)).to_i - 1
     end
 
     private
