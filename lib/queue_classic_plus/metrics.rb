@@ -7,7 +7,7 @@ module QueueClassicPlus
 
   class Metrics
     def self.timing(*args, &block)
-      provider.timing *args, &block
+      provider.timing(*args, &block)
     end
 
     def self.increment(*args)
