@@ -38,14 +38,14 @@ module QueueClassicPlus
       if force_retry && !(klass.respond_to?(:disable_retries) && klass.disable_retries)
         Metrics.increment("qc.force_retry", source: @q_name)
 
-        retry_with_remaining(klass: klass, job: job, e: e, backoff: 0)
+        retry_with_remaining(klass, job, e, 0)
       # The mailers doesn't have a retries_on?
       elsif klass && klass.respond_to?(:retries_on?) && klass.retries_on?(e)
         Metrics.increment("qc.retry", source: @q_name)
 
         backoff = (max_retries(klass) - remaining_retries(klass, job)) * BACKOFF_WIDTH
 
-        retry_with_remaining(klass: klass, job: job, e: e, backoff: backoff)
+        retry_with_remaining(klass, job, e, backoff)
       else
         enqueue_failed(job, e)
       end
@@ -53,7 +53,9 @@ module QueueClassicPlus
       FailedQueue.delete(job[:id])
     end
 
-    def retry_with_remaining(klass:, job:, e:, backoff:)
+    private
+
+    def retry_with_remaining(klass, job, e, backoff)
       @remaining_retries = remaining_retries(klass, job)
 
       if @remaining_retries > 0
@@ -71,7 +73,6 @@ module QueueClassicPlus
       @remaining_retries ? @remaining_retries - 1 : (job[:remaining_retries] || max_retries(klass)).to_i - 1
     end
 
-    private
     def job_klass(job)
       begin
         Object.const_get(job[:method].split('.')[0])
