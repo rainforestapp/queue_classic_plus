@@ -7,17 +7,17 @@ module QueueClassicPlus
     BACKOFF_WIDTH = 10
     FailedQueue = QC::Queue.new("failed_jobs")
 
-    def enqueue_failed(job, e)
+    def enqueue_failed(e)
       sql = "INSERT INTO #{QC::TABLE_NAME} (q_name, method, args, last_error) VALUES ('failed_jobs', $1, $2, $3)"
       last_error = e.backtrace ? ([e.message] + e.backtrace ).join("\n") : e.message
-      QC.default_conn_adapter.execute sql, job[:method], JSON.dump(job[:args]), last_error
+      QC.default_conn_adapter.execute sql, @job[:method], JSON.dump(@job[:args]), last_error
 
-      QueueClassicPlus.exception_handler.call(e, job)
+      QueueClassicPlus.exception_handler.call(e, @job)
       Metrics.increment("qc.errors", source: @q_name)
     end
 
     def handle_failure(job, e)
-      QueueClassicPlus.logger.info "Handling exception #{e.message} for job #{job[:id]}"
+      QueueClassicPlus.logger.info "Handling exception #{e.class} - #{e.message} for job #{job[:id]}"
 
       force_retry = false
       if connection_error?(e)
@@ -33,52 +33,53 @@ module QueueClassicPlus
         force_retry = true
       end
 
-      klass = job_klass(job)
+      @job = job
 
-      if force_retry && !(klass.respond_to?(:disable_retries) && klass.disable_retries)
+      if force_retry && !(job_class.respond_to?(:disable_retries) && job_class.disable_retries)
         Metrics.increment("qc.force_retry", source: @q_name)
-
-        retry_with_remaining(klass, job, e, 0)
+        retry_with_remaining(e)
       # The mailers doesn't have a retries_on?
-      elsif klass && klass.respond_to?(:retries_on?) && klass.retries_on?(e)
+      elsif job_class && job_class.respond_to?(:retries_on?) && job_class.retries_on?(e)
         Metrics.increment("qc.retry", source: @q_name)
-
-        backoff = (max_retries(klass) - remaining_retries(klass, job)) * BACKOFF_WIDTH
-
-        retry_with_remaining(klass, job, e, backoff)
+        retry_with_remaining(e)
       else
-        enqueue_failed(job, e)
+        enqueue_failed(e)
       end
 
-      FailedQueue.delete(job[:id])
+      FailedQueue.delete(@job[:id])
     end
 
     private
 
-    def retry_with_remaining(klass, job, e, backoff)
-      @remaining_retries = remaining_retries(klass, job)
+    def retry_with_remaining(e)
+      @remaining_retries = calculate_remaining_retries
 
       if @remaining_retries > 0
-        klass.restart_in(backoff, @remaining_retries, *job[:args])
+        @remaining_retries -= 1
+        job_class.restart_in(backoff, @remaining_retries, *@job[:args])
       else
-        enqueue_failed(job, e)
+        enqueue_failed(e)
       end
     end
 
-    def max_retries(klass)
-      klass.respond_to?(:max_retries) ? klass.max_retries : 5
+    def max_retries
+      job_class.respond_to?(:max_retries) ? job_class.max_retries : 5
     end
 
-    def remaining_retries(klass, job)
-      @remaining_retries ? @remaining_retries - 1 : (job[:remaining_retries] || max_retries(klass)).to_i - 1
+    def calculate_remaining_retries
+      @remaining_retries ? @remaining_retries : (@job[:remaining_retries] || max_retries).to_i
     end
 
-    def job_klass(job)
+    def job_class
       begin
-        Object.const_get(job[:method].split('.')[0])
+        Object.const_get(@job[:method].split('.')[0])
       rescue NameError
         nil
       end
+    end
+
+    def backoff
+      (max_retries - calculate_remaining_retries) * BACKOFF_WIDTH
     end
 
     def connection_error?(e)

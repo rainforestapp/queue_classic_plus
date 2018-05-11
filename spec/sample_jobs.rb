@@ -35,7 +35,7 @@ module Jobs
 
     class TestJob < QueueClassicPlus::Base
       @queue = :low
-      retry! on: SomeException, max: 5
+      retry! on: SomeException, max: 1
 
       def self.perform should_raise
         raise SomeException if should_raise
