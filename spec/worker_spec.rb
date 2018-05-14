@@ -88,6 +88,19 @@ describe QueueClassicPlus::CustomWorker do
       end
     end
 
+    context 'with a custom exception having max: 1 retry' do
+      before { Jobs::Tests::TestJob.enqueue_perform(true) }
+
+      it 'retries' do
+        QueueClassicPlus::Metrics.should_receive(:increment).with('qc.retry', source: nil )
+        Timecop.freeze do
+          worker.work
+          expect(failed_queue.count).to eq 0
+          QueueClassicMatchers::QueueClassicRspec.find_by_args('low', 'Jobs::Tests::TestJob._perform', [true]).first['remaining_retries'].should eq "0"
+        end
+      end
+    end
+
     context 'with non-connection based PG jobs' do
       before { Jobs::Tests::UniqueViolationTestJob.enqueue_perform }
 
