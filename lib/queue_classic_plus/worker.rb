@@ -10,9 +10,9 @@ module QueueClassicPlus
     def enqueue_failed(e)
       sql = "INSERT INTO #{QC::TABLE_NAME} (q_name, method, args, last_error) VALUES ('failed_jobs', $1, $2, $3)"
       last_error = e.backtrace ? ([e.message] + e.backtrace ).join("\n") : e.message
-      QC.default_conn_adapter.execute sql, @job[:method], JSON.dump(@job[:args]), last_error
+      QC.default_conn_adapter.execute sql, @failed_job[:method], JSON.dump(@failed_job[:args]), last_error
 
-      QueueClassicPlus.exception_handler.call(e, @job)
+      QueueClassicPlus.exception_handler.call(e, @failed_job)
       Metrics.increment("qc.errors", source: @q_name)
     end
 
@@ -33,7 +33,7 @@ module QueueClassicPlus
         force_retry = true
       end
 
-      @job = job
+      @failed_job = job
 
       if force_retry && !(job_class.respond_to?(:disable_retries) && job_class.disable_retries)
         Metrics.increment("qc.force_retry", source: @q_name)
@@ -46,14 +46,14 @@ module QueueClassicPlus
         enqueue_failed(e)
       end
 
-      FailedQueue.delete(@job[:id])
+      FailedQueue.delete(@failed_job[:id])
     end
 
     private
 
     def retry_with_remaining(e)
       if remaining_retries > 0
-        job_class.restart_in(backoff, remaining_retries - 1, *@job[:args])
+        job_class.restart_in(backoff, remaining_retries - 1, *@failed_job[:args])
       else
         enqueue_failed(e)
       end
@@ -64,12 +64,12 @@ module QueueClassicPlus
     end
 
     def remaining_retries
-      (@job[:remaining_retries] || max_retries).to_i
+      (@failed_job[:remaining_retries] || max_retries).to_i
     end
 
     def job_class
       begin
-        Object.const_get(@job[:method].split('.')[0])
+        Object.const_get(@failed_job[:method].split('.')[0])
       rescue NameError
         nil
       end
