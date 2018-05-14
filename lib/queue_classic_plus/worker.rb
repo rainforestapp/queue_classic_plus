@@ -52,11 +52,8 @@ module QueueClassicPlus
     private
 
     def retry_with_remaining(e)
-      @remaining_retries = calculate_remaining_retries
-
-      if @remaining_retries > 0
-        @remaining_retries -= 1
-        job_class.restart_in(backoff, @remaining_retries, *@job[:args])
+      if remaining_retries > 0
+        job_class.restart_in(backoff, remaining_retries - 1, *@job[:args])
       else
         enqueue_failed(e)
       end
@@ -66,8 +63,8 @@ module QueueClassicPlus
       job_class.respond_to?(:max_retries) ? job_class.max_retries : 5
     end
 
-    def calculate_remaining_retries
-      @remaining_retries ? @remaining_retries : (@job[:remaining_retries] || max_retries).to_i
+    def remaining_retries
+      (@job[:remaining_retries] || max_retries).to_i
     end
 
     def job_class
@@ -79,7 +76,7 @@ module QueueClassicPlus
     end
 
     def backoff
-      (max_retries - calculate_remaining_retries) * BACKOFF_WIDTH
+      (max_retries - (remaining_retries - 1)) * BACKOFF_WIDTH
     end
 
     def connection_error?(e)
