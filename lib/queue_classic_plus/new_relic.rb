@@ -21,6 +21,11 @@ module QueueClassicPlusWithNewRelic do
       _perform_without_new_relic *args
     end
   end
+
+  def _perform(*args)
+    super(*args)
+    _perform_with_new_relic(*args)
+  end
 end
 
 QueueClassicPlus::Base.send(:prepend, QueueClassicPlusWithNewRelic)
