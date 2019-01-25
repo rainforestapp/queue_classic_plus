@@ -1,6 +1,6 @@
 require 'new_relic/agent/method_tracer'
 
-module QueueClassicPlusWithNewRelic do
+module QueueClassicPlusWithNewRelic
   include NewRelic::Agent::Instrumentation::ControllerInstrumentation
 
   def new_relic_key
