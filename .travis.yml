@@ -1,4 +1,6 @@
 language: ruby
+services:
+  - postgresql
 before_install:
   - gem update bundler
 install: bundle install --without development

@@ -15,4 +15,5 @@ group :test do
   gem 'rake'
   gem 'rspec'
   gem 'timecop'
+  gem 'newrelic_rpm'
 end
