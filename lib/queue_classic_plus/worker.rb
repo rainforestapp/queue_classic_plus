@@ -77,7 +77,7 @@ module QueueClassicPlus
     end
 
     def enqueue_failed(e)
-      sql = "INSERT INTO #{QC::TABLE_NAME} (q_name, method, args, last_error) VALUES ('failed_jobs', $1, $2, $3)"
+      sql = "INSERT INTO #{QC.table_name} (q_name, method, args, last_error) VALUES ('failed_jobs', $1, $2, $3)"
       last_error = e.backtrace ? ([e.message] + e.backtrace ).join("\n") : e.message
       QC.default_conn_adapter.execute sql, @failed_job[:method], JSON.dump(@failed_job[:args]), last_error
 
