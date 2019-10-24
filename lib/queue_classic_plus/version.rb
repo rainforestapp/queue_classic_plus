@@ -1,3 +1,3 @@
 module QueueClassicPlus
-  VERSION = "1.1.0"
+  VERSION = "4.0.0.alpha1"
 end

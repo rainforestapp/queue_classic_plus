@@ -12,7 +12,7 @@ describe QueueClassicPlus::Base do
       it "does not allow multiple enqueues" do
         subject.do
         subject.do
-        subject.should have_queue_size_of(1)
+        expect(subject).to have_queue_size_of(1)
       end
 
       it "does allow multiple enqueues if something got locked for too long" do
@@ -20,7 +20,7 @@ describe QueueClassicPlus::Base do
         one_day_ago = Time.now - 60*60*24
         execute "UPDATE queue_classic_jobs SET locked_at = '#{one_day_ago}' WHERE q_name = 'test'"
         subject.do
-        subject.should have_queue_size_of(2)
+        expect(subject).to have_queue_size_of(2)
       end
     end
 
@@ -39,13 +39,15 @@ describe QueueClassicPlus::Base do
       end
 
       it "calls perform in a transaction" do
-        QueueClassicPlus::Base.should_receive(:transaction).and_call_original
+        expect(QueueClassicPlus::Base).to receive(:transaction).and_call_original
+
         subject._perform
       end
 
       it "measures the time" do
-        QueueClassicPlus::Metrics.should_receive(:timing).with("qu_perform_time", {source: "funky.name"}).and_call_original
-        subject._perform 
+        expect(QueueClassicPlus::Metrics).to receive(:timing).with("qu_perform_time", {source: "funky.name"}).and_call_original
+
+        subject._perform
       end
     end
 
@@ -61,7 +63,8 @@ describe QueueClassicPlus::Base do
       end
 
       it "calls perform outside of a transaction" do
-        QueueClassicPlus::Base.should_not_receive(:transaction)
+        expect(QueueClassicPlus::Base).to_not receive(:transaction)
+
         subject._perform
       end
     end
@@ -79,15 +82,15 @@ describe QueueClassicPlus::Base do
       end
 
       it "retries on specified exception" do
-        subject.retries_on?(SomeException.new).should be(true)
+        expect(subject.retries_on?(SomeException.new)).to be(true)
       end
 
       it "does not retry on unspecified exceptions" do
-        subject.retries_on?(RuntimeError).should be(false)
+        expect(subject.retries_on?(RuntimeError)).to be(false)
       end
 
       it "sets max retries" do
-        subject.max_retries.should == 5
+        expect(subject.max_retries).to eq(5)
       end
     end
 
@@ -104,16 +107,16 @@ describe QueueClassicPlus::Base do
       end
 
       it "retries on all specified exceptions" do
-        subject.retries_on?(SomeException.new).should be(true)
-        subject.retries_on?(SomeOtherException.new).should be(true)
+        expect(subject.retries_on?(SomeException.new)).to be(true)
+        expect(subject.retries_on?(SomeOtherException.new)).to be(true)
       end
 
       it "does not retry on unspecified exceptions" do
-        subject.retries_on?(RuntimeError).should be(false)
+        expect(subject.retries_on?(RuntimeError)).to be(false)
       end
 
       it "sets max retries" do
-        subject.max_retries.should == 5
+        expect(subject.max_retries).to eq(5)
       end
     end
 
@@ -133,22 +136,22 @@ describe QueueClassicPlus::Base do
       end
 
       it "retries on a subclass of a specified exception" do
-        subject.retries_on?(ServiceReallyUnavailable.new).should be(true)
+        expect(subject.retries_on?(ServiceReallyUnavailable.new)).to be(true)
       end
 
       it "does not retry on unspecified exceptions" do
-        subject.retries_on?(RuntimeError).should be(false)
+        expect(subject.retries_on?(RuntimeError)).to be(false)
       end
 
       it "sets max retries" do
-        subject.max_retries.should == 5
+        expect(subject.max_retries).to eq(5)
       end
     end
   end
 
   describe ".librato_key" do
     it "removes unsupported caracter from the classname" do
-      Jobs::Tests::TestJob.librato_key.should == 'jobs.tests.test_job'
+      expect(Jobs::Tests::TestJob.librato_key).to eq('jobs.tests.test_job')
     end
   end
 end

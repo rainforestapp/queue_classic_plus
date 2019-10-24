@@ -4,6 +4,6 @@ module QcHelpers
   end
 
   def find_job(id)
-    execute("SELECT * FROM #{QC::TABLE_NAME} WHERE id = $1", id)
+    execute("SELECT * FROM #{QC.table_name} WHERE id = $1", id)
   end
 end

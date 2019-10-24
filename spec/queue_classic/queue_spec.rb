@@ -6,7 +6,7 @@ describe QC do
 
     context "lock" do
 
-      it "should lock the job with remaining_retries" do
+      it "locks the job with remaining_retries" do
         QC.enqueue_retry_in(1, "puts", 5, 2)
         sleep 1
         job = QC.lock

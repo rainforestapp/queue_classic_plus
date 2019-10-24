@@ -14,7 +14,7 @@ module Jobs
       @queue = :low
       retry! on: SomeException, max: 5
 
-      def self.perform should_raise
+      def self.perform(should_raise)
         raise SomeException if should_raise
       end
     end
@@ -27,7 +27,7 @@ module Jobs
 
       @queue = :low
 
-      def self.perform should_raise
+      def self.perform(should_raise)
         raise Custom if should_raise
       end
     end
@@ -37,7 +37,7 @@ module Jobs
       @queue = :low
       retry! on: SomeException, max: 1
 
-      def self.perform should_raise
+      def self.perform(should_raise)
         raise SomeException if should_raise
       end
     end
