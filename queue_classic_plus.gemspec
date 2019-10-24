@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "queue_classic", ">= 3.1.0"
+  spec.add_dependency "queue_classic", "4.0.0.pre.alpha1"
   if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('2.3.0')
     spec.add_development_dependency "bundler", "~> 1.6"
   else
