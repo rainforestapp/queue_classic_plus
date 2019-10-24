@@ -8,7 +8,6 @@ before_script:
   - psql -c 'create database queue_classic_plus_test;' -U postgres
 
 rvm:
-  - 2.0.0
-  - 2.1.5
-  - 2.2.0
-  - 2.3.1
+  - 2.6.5
+  - 2.5.7
+  - 2.4.9
