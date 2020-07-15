@@ -119,7 +119,7 @@ module QueueClassicPlus
     end
 
     def self.transaction(options = {}, &block)
-      if defined?(ActiveRecord)
+      if defined?(ActiveRecord) && ActiveRecord::Base.connected?
         # If ActiveRecord is loaded, we use it's own transaction mechanisn since
         # it has slightly different semanctics for rollback.
         ActiveRecord::Base.transaction(options, &block)
