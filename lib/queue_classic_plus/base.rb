@@ -67,7 +67,7 @@ module QueueClassicPlus
                )
              AS x"
 
-        result = QC.default_conn_adapter.execute(q, @queue, method, args.to_json)
+        result = QC.default_conn_adapter.execute(q, @queue, method, JSON.dump(args))
         result['count'].to_i == 0
       else
         true
