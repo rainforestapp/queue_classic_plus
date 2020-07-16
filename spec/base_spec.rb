@@ -15,6 +15,18 @@ describe QueueClassicPlus::Base do
         expect(subject).to have_queue_size_of(1)
       end
 
+      it "checks for an existing job using the same serializing as job enqueuing" do
+        # simulate a case where obj#to_json and JSON.dump(obj) do not match
+        require 'active_support/core_ext/date_time'
+        require 'active_support/json'
+        ActiveSupport::JSON::Encoding.use_standard_json_time_format = false
+
+        date = DateTime.new(2020, 11, 3)
+        subject.do(date)
+        subject.do(date)
+        expect(subject).to have_queue_size_of(1)
+      end
+
       it "does allow multiple enqueues if something got locked for too long" do
         subject.do
         one_day_ago = Time.now - 60*60*24
