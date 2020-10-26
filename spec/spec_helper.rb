@@ -5,6 +5,7 @@ require 'queue_classic_matchers'
 require_relative './sample_jobs'
 require_relative './helpers'
 require 'pry'
+require 'ddtrace'
 
 ENV["QC_RAILS_DATABASE"] ||= "false" # test on QC::ConnAdapter by default
 ENV["DATABASE_URL"] ||= "postgres:///queue_classic_plus_test"

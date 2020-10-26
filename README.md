@@ -150,6 +150,12 @@ If you are using NewRelic and want to push performance data to it, you can add t
 require "queue_classic_plus/new_relic"
 ```
 
+To instrument DataDog monitoring add this to your QC initializer:
+
+```ruby
+require "queue_classic_plus/datadog"
+```
+
 ## Contributing
 
 1. Fork it ( https://github.com/[my-github-username]/queue_classic_plus/fork )
