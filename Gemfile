@@ -16,4 +16,5 @@ group :test do
   gem 'rspec'
   gem 'timecop'
   gem 'newrelic_rpm'
+  gem 'ddtrace'
 end
