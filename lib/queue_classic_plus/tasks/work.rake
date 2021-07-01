@@ -3,10 +3,14 @@ namespace :qc_plus do
   task :work  => :environment do
     puts "Starting up worker for queue #{ENV['QUEUE']}"
 
-    if defined? Raven
+    # ActiveRecord::RecordNotFound is ignored by Sentry by default,
+    # which shouldn't happen in background jobs.
+    if defined?(Sentry)
+      Sentry.init do |config|
+        config.excluded_exceptions = []
+      end
+    elsif defined?(Raven)
       Raven.configure do |config|
-        # ActiveRecord::RecordNotFound is ignored by Raven by default,
-        # which shouldn't happen in background jobs.
         config.excluded_exceptions = []
       end
     end
