@@ -130,7 +130,7 @@ If you want to log exceptions in your favorite exception tracker. You can config
 
 ```ruby
 QueueClassicPlus.exception_handler = -> (exception, job) do
-  Raven.capture_exception(exception, extra: {job: job, env: ENV})
+  Sentry.capture_exception(exception, extra: { job: job, env: ENV })
 end
 ```
 
