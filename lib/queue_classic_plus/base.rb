@@ -67,7 +67,7 @@ module QueueClassicPlus
                )
              AS x"
 
-        result = QC.default_conn_adapter.execute(q, @queue, method, JSON.dump(args))
+        result = QC.default_conn_adapter.execute(q, @queue, method, JSON.dump(serialized(args)))
         result['count'].to_i == 0
       else
         true
@@ -76,7 +76,7 @@ module QueueClassicPlus
 
     def self.enqueue(method, *args)
       if can_enqueue?(method, *args)
-        queue.enqueue(method, *args)
+        queue.enqueue(method, *serialized(args))
       end
     end
 
@@ -86,11 +86,11 @@ module QueueClassicPlus
 
     def self.enqueue_perform_in(time, *args)
       raise "Can't enqueue in the future for locked jobs" if locked?
-      queue.enqueue_in(time, "#{self.to_s}._perform", *args)
+      queue.enqueue_in(time, "#{self.to_s}._perform", *serialized(args))
     end
 
     def self.restart_in(time, remaining_retries, *args)
-      queue.enqueue_retry_in(time, "#{self.to_s}._perform", remaining_retries, *args)
+      queue.enqueue_retry_in(time, "#{self.to_s}._perform", remaining_retries, *serialized(args))
     end
 
     def self.do(*args)
@@ -102,13 +102,13 @@ module QueueClassicPlus
     def self._perform(*args)
       Metrics.timing("qu_perform_time", source: librato_key) do
         if skip_transaction
-          perform(*args)
+          perform(*deserialized(args))
         else
           transaction do
             # .to_i defaults to 0, which means no timeout in postgres
             timeout = ENV['POSTGRES_STATEMENT_TIMEOUT'].to_i * 1000
             execute "SET LOCAL statement_timeout = #{timeout}"
-            perform(*args)
+            perform(*deserialized(args))
           end
         end
       end
@@ -145,6 +145,22 @@ module QueueClassicPlus
     private
     def self.execute(sql, *args)
       QC.default_conn_adapter.execute(sql, *args)
+    end
+
+    def self.serialized(args)
+      if defined?(Rails)
+        ActiveJob::Arguments.serialize(args)
+      else
+        args
+      end
+    end
+
+    def self.deserialized(args)
+      if defined?(Rails)
+        ActiveJob::Arguments.deserialize(args)
+      else
+        args
+      end
     end
   end
 end
