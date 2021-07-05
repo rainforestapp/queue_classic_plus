@@ -159,6 +159,33 @@ describe QueueClassicPlus::Base do
         expect(subject.max_retries).to eq(5)
       end
     end
+
+    context "with Rails defined" do
+      require 'active_job/arguments'
+
+      before { stub_const('Rails', true) }
+
+      subject do
+        Class.new(QueueClassicPlus::Base) do
+          @queue = :test
+
+          def self.perform(foo, bar)
+          end
+        end
+      end
+
+      it "serializes parameters when enqueuing a job" do
+        expect(ActiveJob::Arguments).to receive(:serialize).with([42, true])
+
+        subject.do(42, true)
+      end
+
+      it "deserializes parameters when performing an enqueued job" do
+        expect(ActiveJob::Arguments).to receive(:deserialize).with([42, true]) { [42, true] }
+
+        subject._perform(42, true)
+      end
+    end
   end
 
   describe ".librato_key" do

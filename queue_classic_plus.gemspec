@@ -26,4 +26,5 @@ Gem::Specification.new do |spec|
   end
   spec.add_development_dependency "rake"
   spec.add_development_dependency "activerecord", "~> 6.0"
+  spec.add_development_dependency "activejob"
 end
