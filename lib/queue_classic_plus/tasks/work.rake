@@ -8,6 +8,7 @@ namespace :qc_plus do
     if defined?(Sentry)
       Sentry.init do |config|
         config.excluded_exceptions = []
+        config.background_worker_threads = 0 if Gem::Version.new(Sentry::VERSION) >= Gem::Version.new('4.1.0')
       end
     elsif defined?(Raven)
       Raven.configure do |config|
