@@ -67,6 +67,45 @@ describe QueueClassicPlus::CustomWorker do
       end
     end
 
+    context 'when Rails is defined' do
+      require 'active_job'
+      require 'active_job/arguments'
+
+      before { stub_const('Rails', Struct.new(:logger).new(Logger.new(STDOUT))) }
+
+      it 'retries' do
+        expect do
+          job_type.enqueue_perform(:foo)
+        end.to change_queue_size_of(job_type).by(1)
+
+        expect(Jobs::Tests::LockedTestJob).to have_queue_size_of(1)
+        expect(failed_queue.count).to eq(0)
+        expect(QueueClassicMatchers::QueueClassicRspec.find_by_args('low', 'Jobs::Tests::LockedTestJob._perform', [:foo]).first['remaining_retries']).to be_nil
+
+        expect(QueueClassicPlus::Metrics).to receive(:increment).with('qc.retry', source: nil).twice
+
+        Timecop.freeze do
+          worker.work
+
+          expect(failed_queue.count).to eq(0) # not enqueued on Failed
+          expect(QueueClassicMatchers::QueueClassicRspec.find_by_args('low', 'Jobs::Tests::LockedTestJob._perform', [:foo]).first['remaining_retries']).to eq "4"
+          expect(Jobs::Tests::LockedTestJob).to have_scheduled(:foo).at(Time.now + described_class::BACKOFF_WIDTH) # should have scheduled a retry for later
+        end
+
+        Timecop.freeze(Time.now + (described_class::BACKOFF_WIDTH * 2)) do
+          # the job should be re-enqueued with a decremented retry count
+          jobs = QueueClassicMatchers::QueueClassicRspec.find_by_args('low', 'Jobs::Tests::LockedTestJob._perform', [:foo])
+          expect(jobs.size).to eq(1)
+          job = jobs.first
+          expect(job['remaining_retries'].to_i).to eq(job_type.max_retries - 1)
+          expect(job['locked_by']).to be_nil
+          expect(job['locked_at']).to be_nil
+        end
+
+        worker.work
+      end
+    end
+
     context 'when PG connection reaped during a job' do
       before { Jobs::Tests::ConnectionReapedTestJob.enqueue_perform }
 

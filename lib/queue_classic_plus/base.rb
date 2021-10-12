@@ -142,10 +142,7 @@ module QueueClassicPlus
       execute q
     end
 
-    private
-    def self.execute(sql, *args)
-      QC.default_conn_adapter.execute(sql, *args)
-    end
+    protected
 
     def self.serialized(args)
       if defined?(Rails)
@@ -161,6 +158,12 @@ module QueueClassicPlus
       else
         args
       end
+    end
+
+    private
+
+    def self.execute(sql, *args)
+      QC.default_conn_adapter.execute(sql, *args)
     end
   end
 end
