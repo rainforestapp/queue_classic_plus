@@ -4,6 +4,7 @@ require 'timecop'
 require 'queue_classic_matchers'
 require_relative './sample_jobs'
 require_relative './helpers'
+require 'byebug'
 require 'pry'
 require 'ddtrace'
 

@@ -1,6 +1,6 @@
 # QueueClassicPlus
 
-[![Build Status](https://travis-ci.org/rainforestapp/queue_classic_plus.svg?branch=master)](https://travis-ci.org/rainforestapp/queue_classic_plus)
+[![rainforestapp](https://circleci.com/gh/rainforestapp/queue_classic_plus.svg?branch=master)](https://app.circleci.com/pipelines/github/rainforestapp/queue_classic_plus?branch=master)
 
 [queue_classic](https://github.com/QueueClassic/queue_classic) is a simple Postgresql backed DB queue. However, it's a little too simple to use it as the main queueing system of a medium to large app. This was developed at [Rainforest QA](https://www.rainforestqa.com/).
 

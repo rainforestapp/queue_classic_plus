@@ -1,6 +1,7 @@
 *.gem
 *.rbc
 .bundle
+.byebug_history
 .config
 .yardoc
 Gemfile.lock
@@ -9,6 +10,7 @@ _yardoc
 coverage
 doc/
 lib/bundler/man
+log/
 pkg
 rdoc
 spec/reports
