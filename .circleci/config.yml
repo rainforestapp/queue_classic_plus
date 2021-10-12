@@ -1,0 +1,67 @@
+version: 2.1
+
+jobs:
+  test:
+    docker:
+      - image: circleci/ruby:2.7.4-node
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_TOKEN
+        environment:
+          DATABASE_URL: postgres://circleci:circleci@127.0.0.1:5432/queue_classic_plus_test
+      - image: circleci/postgres:9.6.6-alpine
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_TOKEN
+        environment:
+          POSTGRES_USER: circleci
+          POSTGRES_PASSWORD: circleci
+          POSTGRES_DB: queue_classic_plus_test
+    steps:
+      - checkout
+      - run:
+          name: run tests
+          command: |
+            bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs=4 --retry=3
+            bundle exec rspec
+
+  push_to_rubygems:
+    docker:
+      - image: circleci/ruby:2.7.4
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_TOKEN
+    steps:
+      - checkout
+      - run:
+          name: Create .gem/credentials file
+          command: |
+            mkdir ~/.gem
+            echo "---
+              :rubygems_api_key: $RUBYGEMS_API_KEY
+            " > ~/.gem/credentials
+            chmod 600 ~/.gem/credentials
+      - run:
+          name: Release to rubygems
+          command: |
+            gem build queue_classic_plus
+            gem push queue_classic_plus-*.gem
+
+workflows:
+  version: 2
+  gem_release:
+    jobs:
+      - test:
+          context:
+            - DockerHub
+
+      - push_to_rubygems:
+          filters:
+            branches:
+              ignore:
+                - /.*/
+            tags:
+              only:
+                - /^v.*/
+          context:
+            - DockerHub
