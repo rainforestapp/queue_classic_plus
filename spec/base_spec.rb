@@ -160,11 +160,7 @@ describe QueueClassicPlus::Base do
       end
     end
 
-    context "with Rails defined" do
-      require 'active_job/arguments'
-
-      before { stub_const('Rails', true) }
-
+    context "with Rails defined", rails: true do
       subject do
         Class.new(QueueClassicPlus::Base) do
           @queue = :test

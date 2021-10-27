@@ -67,12 +67,7 @@ describe QueueClassicPlus::CustomWorker do
       end
     end
 
-    context 'when Rails is defined' do
-      require 'active_job'
-      require 'active_job/arguments'
-
-      before { stub_const('Rails', Struct.new(:logger).new(Logger.new(STDOUT))) }
-
+    context 'when Rails is defined', rails: true do
       it 'retries' do
         expect do
           job_type.enqueue_perform(:foo)

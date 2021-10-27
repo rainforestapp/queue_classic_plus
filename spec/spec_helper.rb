@@ -26,4 +26,11 @@ RSpec.configure do |config|
     # Reset the default (memoized) queue instance between specs
     QC.default_queue = nil
   end
+
+  config.before(:each, rails: true) do
+    require 'active_job'
+    require 'active_job/arguments'
+
+    stub_const('Rails', Struct.new(:logger).new(Logger.new(STDOUT)))
+  end
 end
