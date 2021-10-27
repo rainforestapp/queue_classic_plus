@@ -31,7 +31,7 @@ module QueueClassicPlus
         Metrics.increment("qc.force_retry", source: @q_name)
         retry_with_remaining(e)
       # The mailers doesn't have a retries_on?
-    elsif failed_job_class && failed_job_class.respond_to?(:retries_on?) && failed_job_class.retries_on?(e)
+      elsif failed_job_class.respond_to?(:retries_on?) && failed_job_class.retries_on?(e)
         Metrics.increment("qc.retry", source: @q_name)
         retry_with_remaining(e)
       else
