@@ -61,11 +61,9 @@ module QueueClassicPlus
     end
 
     def failed_job_class
-      begin
-        Object.const_get(@failed_job[:method].split('.')[0])
-      rescue NameError
-        nil
-      end
+      Object.const_get(@failed_job[:method].split('.')[0])
+    rescue NameError
+      nil
     end
 
     def backoff
