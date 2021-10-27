@@ -26,6 +26,26 @@ describe QueueClassicPlus::CustomWorker do
       worker.work
       expect(failed_queue.count).to eq(1)
     end
+
+    context 'when Rails is defined', rails: true do
+      let(:job_type) { Jobs::Tests::TestJobNoRetry }
+      let(:queue) { job_type.queue }
+
+      it 'properly serializes arguments for jobs in the failed queue' do
+        job_type.enqueue_perform(:raise)
+        expect(failed_queue.count).to eq(0)
+        worker.work
+
+        expect(failed_queue.count).to eq(1)
+        job = QueueClassicMatchers::QueueClassicRspec.find_by_args(
+          'failed_jobs',
+          'Jobs::Tests::TestJobNoRetry._perform',
+          [:raise]).first
+
+        expect(job).to_not be_nil
+        expect(job['last_error']).to_not be_nil
+      end
+    end
   end
 
   context "retry" do
