@@ -13,7 +13,6 @@ end
 
 group :test do
   gem 'byebug'
-  gem 'rake'
   gem 'rspec'
   gem 'timecop'
   gem 'newrelic_rpm'
