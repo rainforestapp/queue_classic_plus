@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   test:
     docker:
-      - image: circleci/ruby:2.7.4-node
+      - image: cimg/ruby:3.0.3
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_TOKEN
@@ -27,7 +27,7 @@ jobs:
 
   push_to_rubygems:
     docker:
-      - image: circleci/ruby:2.7.4
+      - image: cimg/ruby:3.0.3
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_TOKEN
