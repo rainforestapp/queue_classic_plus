@@ -1,3 +1,5 @@
+require 'spec_helper'
+require 'active_record'
 
 describe QueueClassicPlus::Base do
   context "A child of QueueClassicPlus::Base" do
@@ -189,5 +191,32 @@ describe QueueClassicPlus::Base do
       expect(Jobs::Tests::TestJob.librato_key).to eq('jobs.tests.test_job')
     end
   end
-end
 
+  context 'with ActiveRecord' do
+    before do
+      @old_conn_adapter = QC.default_conn_adapter
+      @activerecord_conn = ActiveRecord::Base.establish_connection(ENV["DATABASE_URL"])
+      QC.default_conn_adapter = QC::ConnAdapter.new(
+        connection: ActiveRecord::Base.connection.raw_connection
+      )
+    end
+
+    after do
+      @activerecord_conn.disconnect!
+      QC.default_conn_adapter = @old_conn_adapter
+    end
+
+    subject do
+      Class.new(QueueClassicPlus::Base) do
+        @queue = :test
+
+        def self.perform(foo, bar)
+        end
+      end
+    end
+
+    it 'works' do
+      subject._perform(1, 2)
+    end
+  end
+end
