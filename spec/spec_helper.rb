@@ -1,3 +1,10 @@
+require 'simplecov'
+
+SimpleCov.start do
+  add_filter(%r/^\/spec\//)
+  enable_coverage(:branch)
+end
+
 require 'queue_classic_plus'
 require 'pg'
 require 'timecop'
