@@ -216,7 +216,7 @@ describe QueueClassicPlus::Base do
     end
 
     it 'works' do
-      subject._perform(1, 2)
+      expect { subject._perform(1, 2) }.not_to raise_error
     end
   end
 end
