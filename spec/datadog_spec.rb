@@ -10,8 +10,8 @@ describe 'requiring queue_classic_plus/new_relic' do
 
   it 'adds Datadog profiling support' do
     require 'queue_classic_plus/datadog'
-    expect(Datadog.tracer).to receive(:trace).with(
-      'qc.job', service_name: 'qc.job', resource: 'FunkyName#perform'
+    expect(Datadog::Tracing).to receive(:trace).with(
+      'qc.job', service: 'qc.job', resource: 'FunkyName#perform'
     )
     subject
   end

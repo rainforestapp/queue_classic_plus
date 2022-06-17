@@ -16,6 +16,6 @@ group :test do
   gem 'rspec'
   gem 'timecop'
   gem 'newrelic_rpm'
-  gem 'ddtrace'
+  gem 'ddtrace', '~> 1'
   gem 'simplecov', require: false
 end

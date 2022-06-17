@@ -2,7 +2,15 @@
 
 module QueueClassicDatadog
   def _perform(*args)
-    Datadog.tracer.trace('qc.job', service_name: 'qc.job', resource: "#{name}#perform") do |_|
+    # Datadog::VERSION was moved to DDTrace::VERSION in dd_trace 1.0
+    tracer, options =
+      if defined?(Datadog::VERSION)
+        [Datadog.tracer, { service_name: 'qc.job', resource: "#{name}#perform" }]
+      else
+        [Datadog::Tracing, { service: 'qc.job', resource: "#{name}#perform" }]
+      end
+
+    tracer.trace('qc.job', **options) do |_|
       super
     end
   end
