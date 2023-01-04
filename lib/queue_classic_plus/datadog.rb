@@ -2,7 +2,7 @@
 
 module QueueClassicDatadog
   def _perform(*args)
-    Datadog.tracer.trace('qc.job', service_name: 'qc.job', resource: "#{name}#perform") do |_|
+    Datadog::Tracing.trace('qc.job', service: 'qc.job', resource: "#{name}#perform") do |_|
       super
     end
   end

@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   test:
     docker:
-      - image: cimg/ruby:3.0.3
+      - image: cimg/ruby:3.2.0
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_TOKEN
@@ -27,7 +27,7 @@ jobs:
 
   push_to_rubygems:
     docker:
-      - image: cimg/ruby:3.0.3
+      - image: cimg/ruby:3.2.0
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_TOKEN
