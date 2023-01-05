@@ -65,3 +65,4 @@ workflows:
                 - /^v.*/
           context:
             - DockerHub
+            - RubyGems
