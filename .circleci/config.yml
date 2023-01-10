@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   test:
     docker:
-      - image: cimg/ruby:3.0.3
+      - image: cimg/ruby:3.2.0
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_TOKEN
@@ -27,7 +27,7 @@ jobs:
 
   push_to_rubygems:
     docker:
-      - image: cimg/ruby:3.0.3
+      - image: cimg/ruby:3.2.0
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_TOKEN
@@ -47,6 +47,21 @@ jobs:
             gem build queue_classic_plus
             gem push queue_classic_plus-*.gem
 
+  update_jira:
+    docker:
+      - image: alpine:3.8
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_TOKEN
+    steps:
+      - run:
+          name: Install dependencies
+          command: apk add --no-cache bash curl git openssh
+      - checkout
+      - run:
+          name: Update JIRA
+          command: .circleci/update-jira.sh
+
 workflows:
   version: 2
   gem_release:
@@ -65,3 +80,10 @@ workflows:
                 - /^v.*/
           context:
             - DockerHub
+            - RubyGems
+      - update_jira:
+          context:
+            - DockerHub
+            - update-jira-webhook
+          requires:
+            - push_to_rubygems
