@@ -1,9 +1,17 @@
 # frozen_string_literal: true
 
+require 'dry-configurable'
+
 module QueueClassicDatadog
+  extend Dry::Configurable
+
+  setting :dd_service
+
   def _perform(*args)
+    service_name = QueueClassicDatadog.config.dd_service || 'qc.job'
+
     if Gem.loaded_specs['ddtrace'].version >= Gem::Version.new('1')
-      Datadog::Tracing.trace('qc.job', service: 'qc.job', resource: "#{name}#perform") do |_|
+      Datadog::Tracing.trace('qc.job', service: service_name, resource: "#{name}#perform") do |_|
         super
       end
     else
