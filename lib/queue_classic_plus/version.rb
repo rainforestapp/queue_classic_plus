@@ -1,3 +1,3 @@
 module QueueClassicPlus
-  VERSION = '4.0.0.alpha11'.freeze
+  VERSION = '4.0.0.alpha12'.freeze
 end
