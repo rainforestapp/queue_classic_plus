@@ -5,7 +5,6 @@ gemspec
 
 gem "queue_classic_matchers", github: 'rainforestapp/queue_classic_matchers'
 gem 'pry'
-gem 'dry-configurable'
 
 group :development do
   gem "guard-rspec", require: false
