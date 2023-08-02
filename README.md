@@ -126,7 +126,7 @@ end
 
 ## Advanced configuration
 
-If you want to log exceptions in your favorite exception tracker. You can configured it like sso:
+If you want to log exceptions in your favorite exception tracker. You can configured it like so:
 
 ```ruby
 QueueClassicPlus.exception_handler = -> (exception, job) do
@@ -142,18 +142,24 @@ Push metrics to your metric provider (only Librato is supported for now).
 QueueClassicPlus.update_metrics
 ```
 
-Call this is a cron job or something similar.
+Call this in a cron job or something similar.
 
-If you are using NewRelic and want to push performance data to it, you can add this to an initializer:
+If you are using New Relic and want to push performance data to it, you can add this to an initializer:
 
 ```ruby
 require "queue_classic_plus/new_relic"
 ```
 
-To instrument DataDog monitoring add this to your QC initializer:
+To instrument Datadog monitoring add this to your QC initializer:
 
 ```ruby
 require "queue_classic_plus/datadog"
+```
+
+The Datadog service name defaults to `qc.job`. This can be changed in the initializer: 
+
+```ruby
+QueueClassicDatadog.config.dd_service = "custom_service_name"
 ```
 
 ## Contributing
