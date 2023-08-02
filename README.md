@@ -178,4 +178,7 @@ createdb queue_classic_plus_test
 
 ## Releasing
 
-Releasing is done in CircleCI via the `push_to_rubygems`, triggered by pushing a tagged commit. To do so, simply [create a new GitHub release](https://github.com/rainforestapp/queue_classic_plus/releases/new).
+Releasing is done in CircleCI via the `push_to_rubygems`, triggered by pushing a tagged commit.
+You can create a new `tag` while [creating a new GitHub release](https://github.com/rainforestapp/queue_classic_plus/releases/new).
+
+_** Note: The `tag` is what publishes a new version of the gem. The `release` is purely for documentation._
