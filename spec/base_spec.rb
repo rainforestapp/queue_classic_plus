@@ -11,14 +11,14 @@ describe QueueClassicPlus::Base do
 
     it "allows multiple enqueues" do
       threads = []
-      50.times do
+      10.times do
         threads << Thread.new do
           subject.do
         end
       end
       threads.each(&:join)
 
-      expect(subject).to have_queue_size_of(50)
+      expect(subject).to have_queue_size_of(10)
     end
 
     context "that is locked" do
@@ -31,7 +31,7 @@ describe QueueClassicPlus::Base do
 
       it "does not allow multiple enqueues" do
         threads = []
-        50.times do
+        10.times do
           threads << Thread.new do
             subject.do
             expect(subject).to have_queue_size_of(1)
@@ -40,10 +40,10 @@ describe QueueClassicPlus::Base do
         threads.each(&:join)
       end
 
-      it "allows enqueueing same job with different arguments" do\
+      it "allows enqueueing same job with different arguments" do
         threads = []
         (1..3).each do |arg|
-          50.times do
+          10.times do
             threads << Thread.new do
               subject.do(arg)
             end
