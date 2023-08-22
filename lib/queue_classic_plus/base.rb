@@ -2,16 +2,8 @@ module QueueClassicPlus
   class Base
     extend QueueClassicPlus::InheritableAttribute
 
-    # Max value for bigint calculated from
-    # https://stackoverflow.com/questions/28960478/postgres-maximum-value-for-bigint
-    PG_BIGINT_MAX = 9223372036854775807.freeze
-
     def self.queue
       QC::Queue.new(@queue)
-    end
-
-    def self.queue_name_digest
-      @queue_name_digest ||= @queue.to_s.to_i(36) % PG_BIGINT_MAX
     end
 
     inheritable_attr :locked
@@ -60,42 +52,8 @@ module QueueClassicPlus
       QueueClassicPlus.logger
     end
 
-    def self.can_enqueue?(method, *args)
-      if locked?
-        max_lock_time = ENV.fetch("QUEUE_CLASSIC_MAX_LOCK_TIME", 10 * 60).to_i
-
-        q = "SELECT COUNT(1) AS count
-             FROM
-               (
-                 SELECT 1
-                 FROM queue_classic_jobs
-                 WHERE q_name = $1 AND method = $2 AND args::text = $3::text
-                   AND (locked_at IS NULL OR locked_at > current_timestamp - interval '#{max_lock_time} seconds')
-                 LIMIT 1
-               )
-             AS x"
-
-        result = QC.default_conn_adapter.execute(q, @queue, method, JSON.dump(serialized(args)))
-        result['count'].to_i == 0
-      else
-        true
-      end
-    end
-
     def self.enqueue(method, *args)
-       conn = QC.default_conn_adapter.connection
-       check_and_enqueue = proc do
-         conn.exec("SELECT pg_advisory_xact_lock(#{queue_name_digest})")
-         if can_enqueue?(method, *args)
-           queue.enqueue(method, *serialized(args))
-         end
-       end
-
-       if [PG::PQTRANS_ACTIVE, PG::PQTRANS_INTRANS].include?(conn.transaction_status)
-         check_and_enqueue.call
-       else
-         conn.transaction &check_and_enqueue
-       end
+      queue.enqueue(method, *serialized(args), lock: locked?)
     end
 
     def self.enqueue_perform(*args)

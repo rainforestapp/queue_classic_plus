@@ -50,5 +50,25 @@ module QC
       end
     end
 
+    def enqueue(method, *args, lock: false)
+      QC.log_yield(:measure => 'queue.enqueue') do
+        insert_sql = <<-EOF
+          INSERT INTO #{QC.table_name} (q_name, method, args, lock)
+          VALUES ($1, $2, $3, $4)
+          ON CONFLICT (q_name, method, args) WHERE lock IS TRUE DO NOTHING
+          RETURNING id
+        EOF
+        begin
+          retries ||= 0
+          conn_adapter.execute(insert_sql, name, method, JSON.dump(args), lock)
+        rescue PG::Error => error
+          if (retries += 1) < 2
+            retry
+          else
+            raise
+          end
+        end
+      end
+    end
   end
 end
