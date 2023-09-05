@@ -184,6 +184,143 @@ describe QueueClassicPlus::Base do
         subject._perform(42, true)
       end
     end
+
+    context "with callbacks defined" do
+      subject do
+        Class.new(QueueClassicPlus::Base) do
+          @queue = :test
+
+          qc_before_enqueue :before_enqueue_method
+          qc_after_enqueue :after_enqueue_method
+          qc_around_enqueue :around_enqueue_method
+
+          qc_before_perform :before_perform_method
+          qc_after_perform :after_perform_method
+          qc_around_perform :around_perform_method
+
+          def self.before_enqueue_method(*_args); end;
+          def self.after_enqueue_method(*_args); end;
+          def self.around_enqueue_method(*_args); end;
+          def self.before_perform_method(*_args); end;
+          def self.after_perform_method(*_args); end;
+          def self.around_perform_method(*_args); end;
+
+          def self.perform(*_args); end;
+        end
+      end
+
+      it "passes enqueue arguments to callbacks" do
+        expect(subject).to receive(:before_enqueue_method).with("enqueue_argument").once
+        expect(subject).to receive(:after_enqueue_method).with("enqueue_argument").once
+        expect(subject).to receive(:around_enqueue_method).with("enqueue_argument").exactly(2).times
+
+        subject.do("enqueue_argument")
+      end
+
+      it "passes perform arguments to callbacks" do
+        expect(subject).to receive(:before_perform_method).with("perform_argument").once
+        expect(subject).to receive(:after_perform_method).with("perform_argument").once
+        expect(subject).to receive(:around_perform_method).with("perform_argument").exactly(2).times
+
+        subject.perform("perform_argument")
+      end
+
+      context "when enqueued" do
+        it "calls the enqueue callback methods" do
+          expect(subject).to receive(:before_enqueue_method).once
+          expect(subject).to receive(:after_enqueue_method).once
+          expect(subject).to receive(:around_enqueue_method).exactly(2).times
+
+          subject.do
+        end
+
+        it "does not call the perform callbacks" do
+          expect(subject).to_not receive(:before_perform_method)
+          expect(subject).to_not receive(:after_perform_method)
+          expect(subject).to_not receive(:around_perform_method)
+
+          subject.do
+        end
+      end
+
+      context "when perform" do
+        it "calls the perform callback methods" do
+          expect(subject).to receive(:before_perform_method).once
+          expect(subject).to receive(:after_perform_method).once
+          expect(subject).to receive(:around_perform_method).exactly(2).times
+
+          subject.perform
+        end
+
+        it "does not call the enqueue callbacks" do
+          expect(subject).to_not receive(:before_enqueue_method)
+          expect(subject).to_not receive(:after_enqueue_method)
+          expect(subject).to_not receive(:around_enqueue_method)
+
+          subject.perform
+        end
+      end
+
+    end
+
+    context "with callback blocks defined" do
+      subject do
+        Class.new(QueueClassicPlus::Base) do
+          @queue = :test
+          class_variable_set(:@@block_result, [])
+
+          qc_before_enqueue do |*_args|
+            class_variable_get(:@@block_result).append("before_enqueue_block")
+          end
+          qc_after_enqueue do |*_args|
+            class_variable_get(:@@block_result).append("after_enqueue_block")
+          end
+          qc_around_enqueue do |*_args|
+            class_variable_get(:@@block_result).append("around_enqueue_block")
+          end
+
+          qc_before_perform do |*_args|
+            class_variable_get(:@@block_result).append("before_perform_block")
+          end
+          qc_after_perform do |*_args|
+            class_variable_get(:@@block_result).append("after_perform_block")
+          end
+          qc_around_perform do |*_args|
+            class_variable_get(:@@block_result).append("around_perform_block")
+          end
+
+          def self.before_enqueue_method(*_args); end;
+          def self.after_enqueue_method(*_args); end;
+          def self.around_enqueue_method(*_args); end;
+          def self.before_perform_method(*_args); end;
+          def self.after_perform_method(*_args); end;
+          def self.around_perform_method(*_args); end;
+
+          def self.perform; end;
+
+        end
+      end
+
+      context "when enqueued" do
+        it "calls the enqueue callback blocks" do
+          subject.do
+
+          expect(subject.class_variable_get(:@@block_result)).to eq(
+            %w(around_enqueue_block before_enqueue_block after_enqueue_block around_enqueue_block)
+          )
+        end
+      end
+
+      context "when perform" do
+        it "calls the perform callback blocks" do
+          subject.perform
+
+          expect(subject.class_variable_get(:@@block_result)).to eq(
+            %w(around_perform_block before_perform_block after_perform_block around_perform_block)
+          )
+        end
+      end
+    end
   end
 
   describe ".librato_key" do

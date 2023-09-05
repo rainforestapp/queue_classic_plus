@@ -136,6 +136,30 @@ module QueueClassicPlus
       end
     end
 
+    def self.qc_before_enqueue(callback_method = nil, &block)
+      define_callback(:enqueue, :before, callback_method, &block)
+    end
+
+    def self.qc_after_enqueue(callback_method = nil, &block)
+      define_callback(:enqueue, :after, callback_method, &block)
+    end
+
+    def self.qc_around_enqueue(callback_method = nil, &block)
+      define_callback(:enqueue, :around, callback_method, &block)
+    end
+
+    def self.qc_before_perform(callback_method = nil, &block)
+      define_callback(:perform, :before, callback_method, &block)
+    end
+
+    def self.qc_after_perform(callback_method = nil, &block)
+      define_callback(:perform, :after, callback_method, &block)
+    end
+
+    def self.qc_around_perform(callback_method = nil, &block)
+      define_callback(:perform, :around, callback_method, &block)
+    end
+
     # Debugging
     def self.list
       q = "SELECT * FROM queue_classic_jobs WHERE q_name = '#{@queue}'"
@@ -164,6 +188,27 @@ module QueueClassicPlus
 
     def self.execute(sql, *args)
       QC.default_conn_adapter.execute(sql, *args)
+    end
+
+    def self.define_callback(wrapped_method, type, callback_method, &_block)
+      callback_module = Module.new
+
+      callback_module.send(:define_method, wrapped_method) do |*args|
+        callback_args = args
+        if wrapped_method == :enqueue
+          callback_args = callback_args.drop(1) # Class/method is the first argument. Callbacks don't need that.
+        end
+
+        if [:before, :around].include?(type)
+          block_given? ? yield(*callback_args) : send(callback_method, *callback_args)
+        end
+        super(*args)
+        if [:after, :around].include?(type)
+          block_given? ? yield(*callback_args) : send(callback_method, *callback_args)
+        end
+      end
+
+      singleton_class.prepend(callback_module)
     end
   end
 end
