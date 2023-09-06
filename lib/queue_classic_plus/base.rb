@@ -2,16 +2,12 @@ module QueueClassicPlus
   class Base
     extend QueueClassicPlus::InheritableAttribute
 
-    # Max value for bigint calculated from
-    # https://stackoverflow.com/questions/28960478/postgres-maximum-value-for-bigint
-    PG_BIGINT_MAX = 9223372036854775807.freeze
-
     def self.queue
       QC::Queue.new(@queue)
     end
 
     def self.queue_name_digest
-      @queue_name_digest ||= @queue.to_s.to_i(36) % PG_BIGINT_MAX
+      @queue_name_digest ||= @queue.to_s.to_i(36)
     end
 
     inheritable_attr :locked
