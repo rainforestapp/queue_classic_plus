@@ -44,23 +44,6 @@ describe QueueClassicPlus::Base do
       end
     end
 
-    context "when in a transaction" do
-      subject do
-        Class.new(QueueClassicPlus::Base) do
-          @queue = :test
-          lock!
-        end
-      end
-
-      it "does not create another transaction when enqueueing" do
-        conn = QC.default_conn_adapter.connection
-        expect(conn).to receive(:transaction).exactly(1).times.and_call_original
-        conn.transaction do
-          subject.do
-        end
-      end
-    end
-
     context "with default settings" do
       subject do
         Class.new(QueueClassicPlus::Base) do

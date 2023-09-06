@@ -79,19 +79,13 @@ module QueueClassicPlus
     end
 
     def self.enqueue(method, *args)
-       conn = QC.default_conn_adapter.connection
-       check_and_enqueue = proc do
-         conn.exec("SELECT pg_advisory_xact_lock(#{queue_name_digest})")
-         if can_enqueue?(method, *args)
-           queue.enqueue(method, *serialized(args))
-         end
-       end
-
-       if [PG::PQTRANS_ACTIVE, PG::PQTRANS_INTRANS].include?(conn.transaction_status)
-         check_and_enqueue.call
-       else
-         conn.transaction &check_and_enqueue
-       end
+      conn = QC.default_conn_adapter.connection
+      conn.transaction do
+        conn.exec("SELECT pg_advisory_xact_lock(#{queue_name_digest})")
+        if can_enqueue?(method, *args)
+          queue.enqueue(method, *serialized(args))
+        end
+      end
     end
 
     def self.enqueue_perform(*args)
