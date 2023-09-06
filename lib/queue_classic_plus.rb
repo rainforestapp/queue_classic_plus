@@ -15,18 +15,14 @@ module QueueClassicPlus
 
   def self.migrate(c = QC::default_conn_adapter.connection)
     conn = QC::ConnAdapter.new(connection: c)
-    conn.execute("ALTER TABLE queue_classic_jobs ADD COLUMN IF NOT EXISTS last_error TEXT")
-    conn.execute("ALTER TABLE queue_classic_jobs ADD COLUMN IF NOT EXISTS remaining_retries INTEGER")
-    conn.execute("ALTER TABLE queue_classic_jobs ADD COLUMN IF NOT EXISTS lock BOOLEAN NOT NULL DEFAULT FALSE")
-    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS index_queue_classic_jobs_enqueue_lock on queue_classic_jobs(q_name, method, args) WHERE lock IS TRUE")
+    conn.execute("ALTER TABLE queue_classic_jobs ADD COLUMN last_error TEXT")
+    conn.execute("ALTER TABLE queue_classic_jobs ADD COLUMN remaining_retries INTEGER")
   end
 
   def self.demigrate(c = QC::default_conn_adapter.connection)
     conn = QC::ConnAdapter.new(connection: c)
-    conn.execute("ALTER TABLE queue_classic_jobs DROP COLUMN IF EXISTS last_error")
-    conn.execute("ALTER TABLE queue_classic_jobs DROP COLUMN IF EXISTS remaining_retries")
-    conn.execute("DROP INDEX IF EXISTS index_queue_classic_jobs_enqueue_lock")
-    conn.execute("ALTER TABLE queue_classic_jobs DROP COLUMN IF EXISTS lock")
+    conn.execute("ALTER TABLE queue_classic_jobs DROP COLUMN last_error")
+    conn.execute("ALTER TABLE queue_classic_jobs DROP COLUMN remaining_retries")
   end
 
   def self.exception_handler
