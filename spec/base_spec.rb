@@ -12,15 +12,9 @@ describe QueueClassicPlus::Base do
       end
 
       it "does not allow multiple enqueues" do
-        threads = []
-        50.times do
-          threads << Thread.new do
-            subject.do
-            expect(subject).to have_queue_size_of(1)
-          end
-        end
-
-        threads.each(&:join)
+        subject.do
+        subject.do
+        expect(subject).to have_queue_size_of(1)
       end
 
       it "checks for an existing job using the same serializing as job enqueuing" do

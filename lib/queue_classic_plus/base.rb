@@ -6,10 +6,6 @@ module QueueClassicPlus
       QC::Queue.new(@queue)
     end
 
-    def self.queue_name_digest
-      @queue_name_digest ||= @queue.to_s.to_i(36)
-    end
-
     inheritable_attr :locked
     inheritable_attr :skip_transaction
     inheritable_attr :retries_on
@@ -79,12 +75,8 @@ module QueueClassicPlus
     end
 
     def self.enqueue(method, *args)
-      conn = QC.default_conn_adapter.connection
-      conn.transaction do
-        conn.exec("SELECT pg_advisory_xact_lock(#{queue_name_digest})")
-        if can_enqueue?(method, *args)
-          queue.enqueue(method, *serialized(args))
-        end
+      if can_enqueue?(method, *args)
+        queue.enqueue(method, *serialized(args))
       end
     end
 
