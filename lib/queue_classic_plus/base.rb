@@ -136,27 +136,27 @@ module QueueClassicPlus
       end
     end
 
-    def self.qc_before_enqueue(callback_method = nil, &block)
+    def self.before_enqueue(callback_method = nil, &block)
       define_callback(:enqueue, :before, callback_method, &block)
     end
 
-    def self.qc_after_enqueue(callback_method = nil, &block)
+    def self.after_enqueue(callback_method = nil, &block)
       define_callback(:enqueue, :after, callback_method, &block)
     end
 
-    def self.qc_around_enqueue(callback_method = nil, &block)
+    def self.around_enqueue(callback_method = nil, &block)
       define_callback(:enqueue, :around, callback_method, &block)
     end
 
-    def self.qc_before_perform(callback_method = nil, &block)
+    def self.before_perform(callback_method = nil, &block)
       define_callback(:perform, :before, callback_method, &block)
     end
 
-    def self.qc_after_perform(callback_method = nil, &block)
+    def self.after_perform(callback_method = nil, &block)
       define_callback(:perform, :after, callback_method, &block)
     end
 
-    def self.qc_around_perform(callback_method = nil, &block)
+    def self.around_perform(callback_method = nil, &block)
       define_callback(:perform, :around, callback_method, &block)
     end
 

@@ -190,13 +190,13 @@ describe QueueClassicPlus::Base do
         Class.new(QueueClassicPlus::Base) do
           @queue = :test
 
-          qc_before_enqueue :before_enqueue_method
-          qc_after_enqueue :after_enqueue_method
-          qc_around_enqueue :around_enqueue_method
+          before_enqueue :before_enqueue_method
+          after_enqueue :after_enqueue_method
+          around_enqueue :around_enqueue_method
 
-          qc_before_perform :before_perform_method
-          qc_after_perform :after_perform_method
-          qc_around_perform :around_perform_method
+          before_perform :before_perform_method
+          after_perform :after_perform_method
+          around_perform :around_perform_method
 
           def self.before_enqueue_method(*_args); end;
           def self.after_enqueue_method(*_args); end;
@@ -269,23 +269,23 @@ describe QueueClassicPlus::Base do
           @queue = :test
           class_variable_set(:@@block_result, [])
 
-          qc_before_enqueue do |*_args|
+          before_enqueue do |*_args|
             class_variable_get(:@@block_result).append("before_enqueue_block")
           end
-          qc_after_enqueue do |*_args|
+          after_enqueue do |*_args|
             class_variable_get(:@@block_result).append("after_enqueue_block")
           end
-          qc_around_enqueue do |*_args|
+          around_enqueue do |*_args|
             class_variable_get(:@@block_result).append("around_enqueue_block")
           end
 
-          qc_before_perform do |*_args|
+          before_perform do |*_args|
             class_variable_get(:@@block_result).append("before_perform_block")
           end
-          qc_after_perform do |*_args|
+          after_perform do |*_args|
             class_variable_get(:@@block_result).append("after_perform_block")
           end
-          qc_around_perform do |*_args|
+          around_perform do |*_args|
             class_variable_get(:@@block_result).append("around_perform_block")
           end
 
