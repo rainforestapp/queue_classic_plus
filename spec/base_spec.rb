@@ -289,15 +289,7 @@ describe QueueClassicPlus::Base do
             class_variable_get(:@@block_result).append("around_perform_block")
           end
 
-          def self.before_enqueue_method(*_args); end;
-          def self.after_enqueue_method(*_args); end;
-          def self.around_enqueue_method(*_args); end;
-          def self.before_perform_method(*_args); end;
-          def self.after_perform_method(*_args); end;
-          def self.around_perform_method(*_args); end;
-
           def self.perform; end;
-
         end
       end
 
