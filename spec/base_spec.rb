@@ -261,6 +261,31 @@ describe QueueClassicPlus::Base do
         end
       end
 
+      context "when callback defined multiple times" do
+        subject do
+          Class.new(QueueClassicPlus::Base) do
+            @queue = :test
+
+            before_enqueue :before_enqueue_method_1
+            before_enqueue :before_enqueue_method_2
+            before_enqueue :before_enqueue_method_3
+
+            def self.before_enqueue_method_1(*_args); end;
+            def self.before_enqueue_method_2(*_args); end;
+            def self.before_enqueue_method_3(*_args); end;
+
+            def self.perform(*_args); end;
+          end
+        end
+
+        it "calls each callback" do
+          expect(subject).to receive(:before_enqueue_method_1).once
+          expect(subject).to receive(:before_enqueue_method_2).once
+          expect(subject).to receive(:before_enqueue_method_3).once
+
+          subject.do
+        end
+      end
     end
 
     context "with callback blocks defined" do
