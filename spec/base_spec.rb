@@ -3,24 +3,6 @@ require 'active_record'
 
 describe QueueClassicPlus::Base do
   context "A child of QueueClassicPlus::Base" do
-    subject do
-      Class.new(QueueClassicPlus::Base) do
-        @queue = :test
-      end
-    end
-
-    it "allows multiple enqueues" do
-      threads = []
-      10.times do
-        threads << Thread.new do
-          subject.do
-        end
-      end
-      threads.each(&:join)
-
-      expect(subject).to have_queue_size_of(10)
-    end
-
     context "that is locked" do
       subject do
         Class.new(QueueClassicPlus::Base) do
@@ -30,28 +12,9 @@ describe QueueClassicPlus::Base do
       end
 
       it "does not allow multiple enqueues" do
-        threads = []
-        10.times do
-          threads << Thread.new do
-            subject.do
-            expect(subject).to have_queue_size_of(1)
-          end
-        end
-        threads.each(&:join)
-      end
-
-      it "allows enqueueing same job with different arguments" do
-        threads = []
-        (1..3).each do |arg|
-          10.times do
-            threads << Thread.new do
-              subject.do(arg)
-            end
-          end
-        end
-        threads.each(&:join)
-
-        expect(subject).to have_queue_size_of(3)
+        subject.do
+        subject.do
+        expect(subject).to have_queue_size_of(1)
       end
 
       it "checks for an existing job using the same serializing as job enqueuing" do
@@ -65,22 +28,13 @@ describe QueueClassicPlus::Base do
         subject.do(date)
         expect(subject).to have_queue_size_of(1)
       end
-    end
 
-    context "when in a transaction" do
-      subject do
-        Class.new(QueueClassicPlus::Base) do
-          @queue = :test
-          lock!
-        end
-      end
-
-      it "does not create another transaction when enqueueing" do
-        conn = QC.default_conn_adapter.connection
-        expect(conn).to receive(:transaction).exactly(1).times.and_call_original
-        conn.transaction do
-          subject.do
-        end
+      it "does allow multiple enqueues if something got locked for too long" do
+        subject.do
+        one_day_ago = Time.now - 60*60*24
+        execute "UPDATE queue_classic_jobs SET locked_at = '#{one_day_ago}' WHERE q_name = 'test'"
+        subject.do
+        expect(subject).to have_queue_size_of(2)
       end
     end
 

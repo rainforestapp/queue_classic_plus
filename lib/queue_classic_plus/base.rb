@@ -52,8 +52,32 @@ module QueueClassicPlus
       QueueClassicPlus.logger
     end
 
+    def self.can_enqueue?(method, *args)
+      if locked?
+        max_lock_time = ENV.fetch("QUEUE_CLASSIC_MAX_LOCK_TIME", 10 * 60).to_i
+
+        q = "SELECT COUNT(1) AS count
+             FROM
+               (
+                 SELECT 1
+                 FROM queue_classic_jobs
+                 WHERE q_name = $1 AND method = $2 AND args::text = $3::text
+                   AND (locked_at IS NULL OR locked_at > current_timestamp - interval '#{max_lock_time} seconds')
+                 LIMIT 1
+               )
+             AS x"
+
+        result = QC.default_conn_adapter.execute(q, @queue, method, JSON.dump(serialized(args)))
+        result['count'].to_i == 0
+      else
+        true
+      end
+    end
+
     def self.enqueue(method, *args)
-      queue.enqueue(method, *serialized(args), lock: locked?)
+      if can_enqueue?(method, *args)
+        queue.enqueue(method, *serialized(args))
+      end
     end
 
     def self.enqueue_perform(*args)
