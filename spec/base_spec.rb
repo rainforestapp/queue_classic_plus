@@ -259,6 +259,37 @@ describe QueueClassicPlus::Base do
 
           subject.perform
         end
+
+        context "when perform fails" do
+          subject do
+            Class.new(QueueClassicPlus::Base) do
+              @queue = :test
+
+              before_perform :before_perform_method
+              after_perform :after_perform_method
+              around_perform :around_perform_method
+
+              def self.before_perform_method(*_args); end;
+              def self.after_perform_method(*_args); end;
+              def self.around_perform_method(*_args); end;
+
+              def self.perform(*_args)
+                raise StandardError
+              end
+            end
+          end
+
+          it "does not call after callbacks" do
+            expect(subject).to receive(:before_perform_method).once
+            expect(subject).to_not receive(:after_perform_method)
+            expect(subject).to receive(:around_perform_method).once
+
+            begin
+              subject.perform
+            rescue StandardError
+            end
+          end
+        end
       end
 
       context "when callback defined multiple times" do
