@@ -192,18 +192,14 @@ describe QueueClassicPlus::Base do
 
           before_enqueue :before_enqueue_method
           after_enqueue :after_enqueue_method
-          around_enqueue :around_enqueue_method
 
           before_perform :before_perform_method
           after_perform :after_perform_method
-          around_perform :around_perform_method
 
           def self.before_enqueue_method(*_args); end;
           def self.after_enqueue_method(*_args); end;
-          def self.around_enqueue_method(*_args); end;
           def self.before_perform_method(*_args); end;
           def self.after_perform_method(*_args); end;
-          def self.around_perform_method(*_args); end;
 
           def self.perform(*_args); end;
         end
@@ -212,7 +208,6 @@ describe QueueClassicPlus::Base do
       it "passes enqueue arguments to callbacks" do
         expect(subject).to receive(:before_enqueue_method).with("enqueue_argument").once
         expect(subject).to receive(:after_enqueue_method).with("enqueue_argument").once
-        expect(subject).to receive(:around_enqueue_method).with("enqueue_argument").exactly(2).times
 
         subject.do("enqueue_argument")
       end
@@ -220,7 +215,6 @@ describe QueueClassicPlus::Base do
       it "passes perform arguments to callbacks" do
         expect(subject).to receive(:before_perform_method).with("perform_argument").once
         expect(subject).to receive(:after_perform_method).with("perform_argument").once
-        expect(subject).to receive(:around_perform_method).with("perform_argument").exactly(2).times
 
         subject.perform("perform_argument")
       end
@@ -229,7 +223,6 @@ describe QueueClassicPlus::Base do
         it "calls the enqueue callback methods" do
           expect(subject).to receive(:before_enqueue_method).once
           expect(subject).to receive(:after_enqueue_method).once
-          expect(subject).to receive(:around_enqueue_method).exactly(2).times
 
           subject.do
         end
@@ -237,7 +230,6 @@ describe QueueClassicPlus::Base do
         it "does not call the perform callbacks" do
           expect(subject).to_not receive(:before_perform_method)
           expect(subject).to_not receive(:after_perform_method)
-          expect(subject).to_not receive(:around_perform_method)
 
           subject.do
         end
@@ -247,7 +239,6 @@ describe QueueClassicPlus::Base do
         it "calls the perform callback methods" do
           expect(subject).to receive(:before_perform_method).once
           expect(subject).to receive(:after_perform_method).once
-          expect(subject).to receive(:around_perform_method).exactly(2).times
 
           subject.perform
         end
@@ -255,7 +246,6 @@ describe QueueClassicPlus::Base do
         it "does not call the enqueue callbacks" do
           expect(subject).to_not receive(:before_enqueue_method)
           expect(subject).to_not receive(:after_enqueue_method)
-          expect(subject).to_not receive(:around_enqueue_method)
 
           subject.perform
         end
@@ -267,11 +257,9 @@ describe QueueClassicPlus::Base do
 
               before_perform :before_perform_method
               after_perform :after_perform_method
-              around_perform :around_perform_method
 
               def self.before_perform_method(*_args); end;
               def self.after_perform_method(*_args); end;
-              def self.around_perform_method(*_args); end;
 
               def self.perform(*_args)
                 raise StandardError
@@ -282,7 +270,6 @@ describe QueueClassicPlus::Base do
           it "does not call after callbacks" do
             expect(subject).to receive(:before_perform_method).once
             expect(subject).to_not receive(:after_perform_method)
-            expect(subject).to receive(:around_perform_method).once
 
             begin
               subject.perform
@@ -331,18 +318,12 @@ describe QueueClassicPlus::Base do
           after_enqueue do |*_args|
             class_variable_get(:@@block_result).append("after_enqueue_block")
           end
-          around_enqueue do |*_args|
-            class_variable_get(:@@block_result).append("around_enqueue_block")
-          end
 
           before_perform do |*_args|
             class_variable_get(:@@block_result).append("before_perform_block")
           end
           after_perform do |*_args|
             class_variable_get(:@@block_result).append("after_perform_block")
-          end
-          around_perform do |*_args|
-            class_variable_get(:@@block_result).append("around_perform_block")
           end
 
           def self.perform; end;
@@ -354,7 +335,7 @@ describe QueueClassicPlus::Base do
           subject.do
 
           expect(subject.class_variable_get(:@@block_result)).to eq(
-            %w(around_enqueue_block before_enqueue_block after_enqueue_block around_enqueue_block)
+            %w(before_enqueue_block after_enqueue_block)
           )
         end
       end
@@ -364,7 +345,7 @@ describe QueueClassicPlus::Base do
           subject.perform
 
           expect(subject.class_variable_get(:@@block_result)).to eq(
-            %w(around_perform_block before_perform_block after_perform_block around_perform_block)
+            %w(before_perform_block after_perform_block)
           )
         end
       end

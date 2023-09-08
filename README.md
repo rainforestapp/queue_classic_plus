@@ -131,10 +131,8 @@ Jobs support the following callbacks:
 ```
 before_enqueue
 after_enqueue
-around_enqueue
 before_perform
 after_perform
-around_perform
 ```
 
 - `enqueue` callbacks are called when the job is initially enqueued, but not on retries.

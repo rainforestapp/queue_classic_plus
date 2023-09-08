@@ -144,20 +144,12 @@ module QueueClassicPlus
       define_callback(:enqueue, :after, callback_method, &block)
     end
 
-    def self.around_enqueue(callback_method = nil, &block)
-      define_callback(:enqueue, :around, callback_method, &block)
-    end
-
     def self.before_perform(callback_method = nil, &block)
       define_callback(:perform, :before, callback_method, &block)
     end
 
     def self.after_perform(callback_method = nil, &block)
       define_callback(:perform, :after, callback_method, &block)
-    end
-
-    def self.around_perform(callback_method = nil, &block)
-      define_callback(:perform, :around, callback_method, &block)
     end
 
     # Debugging
@@ -199,11 +191,11 @@ module QueueClassicPlus
           callback_args = callback_args.drop(1) # Class/method is the first argument. Callbacks don't need that.
         end
 
-        if [:before, :around].include?(type)
+        if type == :before
           block_given? ? yield(*callback_args) : send(callback_method, *callback_args)
         end
         super(*args)
-        if [:after, :around].include?(type)
+        if type == :after
           block_given? ? yield(*callback_args) : send(callback_method, *callback_args)
         end
       end
