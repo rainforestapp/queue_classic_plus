@@ -182,12 +182,12 @@ module QueueClassicPlus
       QC.default_conn_adapter.execute(sql, *args)
     end
 
-    def self.define_callback(wrapped_method, type, callback_method, &_block)
+    def self.define_callback(name, type, callback_method, &_block)
       singleton_class.prepend(
         Module.new do |callback_module|
-          callback_module.define_method(wrapped_method) do |*args|
+          callback_module.define_method(name) do |*args|
             callback_args = args
-              if wrapped_method == :enqueue
+              if name == :enqueue
                 callback_args = callback_args.drop(1) # Class/method is the first argument. Callbacks don't need that.
               end
 
