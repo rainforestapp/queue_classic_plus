@@ -135,8 +135,11 @@ before_perform
 after_perform
 ```
 
-- `enqueue` callbacks are called when the job is initially enqueued, but not on retries.
-- `perform` callbacks are called when the job is picked up and run by a worker, including retries.
+- `enqueue` callbacks are called when the job is initially enqueued. Caveats:
+  - not called on retries
+  - not called when scheduled in the future (i.e. `Job.enqueue_perform_in`)
+  - still called if enqueuing fails because a job with `lock!` is already enqueued. 
+- `perform` callbacks are called any time the job is picked up and run by a worker, including retries and jobs scheduled in the future.
 
 Callbacks can either be implemented by providing a method to be called:
 
