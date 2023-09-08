@@ -183,24 +183,24 @@ module QueueClassicPlus
     end
 
     def self.define_callback(wrapped_method, type, callback_method, &_block)
-      callback_module = Module.new
+      singleton_class.prepend(
+        Module.new do |callback_module|
+          callback_module.define_method(wrapped_method) do |*args|
+            callback_args = args
+              if wrapped_method == :enqueue
+                callback_args = callback_args.drop(1) # Class/method is the first argument. Callbacks don't need that.
+              end
 
-      callback_module.send(:define_method, wrapped_method) do |*args|
-        callback_args = args
-        if wrapped_method == :enqueue
-          callback_args = callback_args.drop(1) # Class/method is the first argument. Callbacks don't need that.
+              if type == :before
+                block_given? ? yield(*callback_args) : send(callback_method, *callback_args)
+              end
+              super(*args)
+              if type == :after
+                block_given? ? yield(*callback_args) : send(callback_method, *callback_args)
+              end
+          end
         end
-
-        if type == :before
-          block_given? ? yield(*callback_args) : send(callback_method, *callback_args)
-        end
-        super(*args)
-        if type == :after
-          block_given? ? yield(*callback_args) : send(callback_method, *callback_args)
-        end
-      end
-
-      singleton_class.prepend(callback_module)
+      )
     end
   end
 end
