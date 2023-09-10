@@ -124,6 +124,59 @@ class Jobs::NoTransaction < QueueClassicPlus::Base
 end
 ```
 
+
+#### Callbacks
+
+Jobs support the following callbacks:
+```
+before_enqueue
+after_enqueue
+before_perform
+after_perform
+```
+
+- `enqueue` callbacks are called when the job is initially enqueued. Caveats:
+  - not called on retries
+  - not called when scheduled in the future (i.e. `Job.enqueue_perform_in`)
+  - still called if enqueuing fails because a job with `lock!` is already enqueued. 
+- `perform` callbacks are called any time the job is picked up and run by a worker, including retries and jobs scheduled in the future.
+
+Callbacks can either be implemented by providing a method to be called:
+
+```ruby
+class Jobs::WithCallbackMethods < QueueClassicPlus::Base
+  before_enqueue :before_enqueue_method
+
+  @queue = :low
+
+  def self.before_enqueue_method(*args)
+    # ...
+  end
+
+  def self.perform(user_id)
+    # ...
+  end
+end
+```
+
+or by providing a block:
+
+```ruby
+class Jobs::WithCallbackBlocks < QueueClassicPlus::Base
+  before_enqueue do |*args|
+    # ...
+  end
+
+  @queue = :low
+
+  def self.perform(user_id)
+    # ...
+  end
+end
+```
+
+The `args` passed to the callback method/block will be the same as the arguments passed to `QueueClassicPlus::Base.do` and `QueueClassicPlus::Base.perform`. 
+
 ## Advanced configuration
 
 If you want to log exceptions in your favorite exception tracker. You can configured it like so:

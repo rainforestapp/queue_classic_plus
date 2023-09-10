@@ -136,6 +136,22 @@ module QueueClassicPlus
       end
     end
 
+    def self.before_enqueue(callback_method = nil, &block)
+      define_callback(:enqueue, :before, callback_method, &block)
+    end
+
+    def self.after_enqueue(callback_method = nil, &block)
+      define_callback(:enqueue, :after, callback_method, &block)
+    end
+
+    def self.before_perform(callback_method = nil, &block)
+      define_callback(:perform, :before, callback_method, &block)
+    end
+
+    def self.after_perform(callback_method = nil, &block)
+      define_callback(:perform, :after, callback_method, &block)
+    end
+
     # Debugging
     def self.list
       q = "SELECT * FROM queue_classic_jobs WHERE q_name = '#{@queue}'"
@@ -164,6 +180,27 @@ module QueueClassicPlus
 
     def self.execute(sql, *args)
       QC.default_conn_adapter.execute(sql, *args)
+    end
+
+    def self.define_callback(name, type, callback_method, &_block)
+      singleton_class.prepend(
+        Module.new do |callback_module|
+          callback_module.define_method(name) do |*args|
+            callback_args = args
+              if name == :enqueue
+                callback_args = callback_args.drop(1) # Class/method is the first argument. Callbacks don't need that.
+              end
+
+              if type == :before
+                block_given? ? yield(*callback_args) : send(callback_method, *callback_args)
+              end
+              super(*args)
+              if type == :after
+                block_given? ? yield(*callback_args) : send(callback_method, *callback_args)
+              end
+          end
+        end
+      )
     end
   end
 end
