@@ -26,15 +26,19 @@ module QueueClassicPlus
 
       @failed_job = job
       @raw_args = job[:args]
-      @failed_job_args = failed_job_class ? failed_job_class.deserialized(@raw_args) : @raw_args
 
-      if force_retry && !(failed_job_class.respond_to?(:disable_retries) && failed_job_class.disable_retries)
-        Metrics.increment("qc.force_retry", source: @q_name)
-        retry_with_remaining(e)
-      # The mailers doesn't have a retries_on?
-      elsif failed_job_class.respond_to?(:retries_on?) && failed_job_class.retries_on?(e)
-        Metrics.increment("qc.retry", source: @q_name)
-        retry_with_remaining(e)
+      if queue_classic_plus_job?
+        @failed_job_args = failed_job_class.deserialized(@raw_args)
+
+        if force_retry && !failed_job_class.disable_retries
+          Metrics.increment("qc.force_retry", source: @q_name)
+          retry_with_remaining(e)
+        elsif failed_job_class.retries_on?(e)
+          Metrics.increment("qc.retry", source: @q_name)
+          retry_with_remaining(e)
+        else
+          enqueue_failed(e)
+        end
       else
         enqueue_failed(e)
       end
@@ -60,10 +64,20 @@ module QueueClassicPlus
       (@failed_job[:remaining_retries] || max_retries).to_i
     end
 
+    def queue_classic_plus_job?
+      failed_job_class && failed_job_class < Base
+    end
+
     def failed_job_class
-      Object.const_get(@failed_job[:method].split('.')[0])
-    rescue NameError
-      nil
+      return @failed_job_class if @failed_job_class_memoized
+
+      @failed_job_class_memoized = true
+      @failed_job_class =
+      begin
+        Object.const_get(@failed_job[:method].split('.')[0])
+      rescue NameError
+        nil
+      end
     end
 
     def backoff

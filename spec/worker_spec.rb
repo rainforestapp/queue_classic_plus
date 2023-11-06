@@ -45,6 +45,48 @@ describe QueueClassicPlus::CustomWorker do
         expect(job).to_not be_nil
         expect(job['last_error']).to_not be_nil
       end
+
+      context 'for a non-QueueClassicPlus job' do
+        let(:job_type) do
+          Class.new(ActiveJob::Base) do
+            def self.name
+              "NonQcJob"
+            end
+
+            self.queue_adapter = :queue_classic
+
+            queue_as :test
+
+            def perform(boom)
+              raise boom.to_s
+            end
+          end.tap { Object.const_set(:NonQcJob, _1) }
+        end
+        let(:queue) { QC::Queue.new("test") }
+
+        it 'properly enqueues for jobs in the failed queue' do
+          non_qc_job = job_type.new(:boom).enqueue
+          job_id = non_qc_job.provider_job_id
+
+          expect(failed_queue.count).to eq(0)
+          job = find_job(job_id)
+          expect(job).to_not be_nil
+          expect(find_job(job_id.succ)).to be_nil
+          args = JSON.load(job['args']).first
+          expect(args['arguments']).to eq(QueueClassicPlus::Base.serialized([:boom]))
+
+          worker.work
+
+          expect(failed_queue.count).to eq(1)
+          expect(find_job(job_id)).to be_nil
+          job = find_job(job_id.succ)
+          expect(job).to_not be_nil
+          failed_args = JSON.load(job['args']).first
+          expect(failed_args['arguments']).to eq(QueueClassicPlus::Base.serialized([:boom]))
+          expect(job['last_error']).to_not be_nil
+          expect(job['last_error']).to start_with("boom\n")
+        end
+      end
     end
   end
 
