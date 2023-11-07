@@ -50,7 +50,8 @@ module QueueClassicPlus
 
     def retry_with_remaining(e)
       if remaining_retries > 0
-        failed_job_class.restart_in(backoff, remaining_retries - 1, *@failed_job_args)
+        retry_job = failed_job_class.restart_in(backoff, remaining_retries - 1, *@failed_job_args)
+        QueueClassicPlus.logger.info("Retrying #{@failed_job.inspect} as #{retry_job.inspect}}")
       else
         enqueue_failed(e)
       end
