@@ -24,6 +24,7 @@ module QueueClassicPlus
         force_retry = true
       end
 
+      @failed_job_class_memoized = false
       @failed_job = job
       @raw_args = job[:args]
 
