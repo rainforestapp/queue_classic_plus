@@ -16,6 +16,14 @@ group :test do
   gem 'rspec'
   gem 'timecop'
   gem 'newrelic_rpm'
-  gem 'ddtrace'
+  gem 'datadog'
   gem 'simplecov', require: false
+
+  # Ruby 3.3+ extracted these from stdlib
+  if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.3.0')
+    gem 'mutex_m'
+    gem 'base64'
+    gem 'bigdecimal'
+    gem 'drb'
+  end
 end
